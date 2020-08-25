@@ -1,5 +1,6 @@
 build/
 dist/
+*.local
 
 # https://github.com/github/gitignore/blob/master/Node.gitignore
 
