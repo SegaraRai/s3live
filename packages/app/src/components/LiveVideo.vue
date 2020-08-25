@@ -80,7 +80,7 @@ export default {
     <video ref="v" class="w-full h-full" :controls="showControls$$q"></video>
     <template v-if="showOverlay$$q">
       <div class="absolute left-0 top-0 w-full h-full flex items-center justify-center bg-white bg-opacity-25">
-        <button @click="play$$q" class="text-white">
+        <button @click="play$$q" class="text-white focus:outline-none">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-32 h-32 hover:opacity-75">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
           </svg>
