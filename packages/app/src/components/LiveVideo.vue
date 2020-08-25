@@ -19,14 +19,14 @@ export default {
     src: String,
   },
   setup(props, { emit }) {
-    const videoElement$$q = ref<HTMLVideoElement | null>(null);
+    const videoElement = ref<HTMLVideoElement | null>(null);
     const play$$q = ref<() => void>(() => {});
     const ready$$q = ref(false);
     const showControls$$q = ref(false);
     const showOverlay$$q = ref(true);
 
     onMounted(() => {
-      const video = videoElement$$q.value!;
+      const video = videoElement.value!;
       const videoSrc = props.src;
 
       let isSupported = false;
@@ -65,7 +65,7 @@ export default {
     });
 
     return {
-      videoElement$$q,
+      v: videoElement,
       play$$q,
       ready$$q,
       showControls$$q,
@@ -77,7 +77,7 @@ export default {
 
 <template>
   <div v-show="ready$$q">
-    <video ref="videoElement$$q" class="w-full h-full" :controls="showControls$$q"></video>
+    <video ref="v" class="w-full h-full" :controls="showControls$$q"></video>
     <template v-if="showOverlay$$q">
       <div class="absolute left-0 top-0 w-full h-full flex items-center justify-center bg-white bg-opacity-25">
         <button @click="play$$q" class="text-white">
