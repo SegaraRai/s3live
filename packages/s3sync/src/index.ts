@@ -3,9 +3,7 @@ import { basename, dirname, join, relative } from 'path';
 import { S3 } from '@aws-sdk/client-s3';
 
 /** msec */
-const poolInterval = 100 as const;
-/** msec */
-const finishWait = 10000 as const;
+const poolInterval = 200 as const;
 
 const liveDataDir = '/live/data' as const;
 

@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "tsc && pkg -t node14-linux-x64 -o ../../docker/s3sync build/index.js"
+    "build": "tsc && pkg --public -t node14-linux-x64 -o ../../docker/s3sync build/index.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^1.0.0-gamma.6"
