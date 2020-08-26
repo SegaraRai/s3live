@@ -1,13 +1,15 @@
 <script lang="ts">
-import { onMounted, ref } from 'vue';
-import Hls from 'hls.js';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+import Hls, { LoaderContext, LoaderConfig, LoaderCallbacks } from 'hls.js';
+
+const t = Date.now();
 
 class CustomFLoader extends Hls.DefaultConfig.loader {
-  constructor(config) {
+  constructor(config: LoaderConfig) {
     super(config);
   }
 
-  load(context, config, callbacks) {
+  load(context: LoaderContext, config: LoaderConfig, callbacks: LoaderCallbacks): void {
     // use CDN for fragment files
     context.url = context.url.replace(/^https:\/\/s3\.[^/]+\//, 'https://');
     return super.load(context, config, callbacks);
@@ -17,6 +19,7 @@ class CustomFLoader extends Hls.DefaultConfig.loader {
 export default {
   props: {
     src: String,
+    live: Boolean,
   },
   setup(props, { emit }) {
     const videoElement = ref<HTMLVideoElement | null>(null);
@@ -24,6 +27,8 @@ export default {
     const ready$$q = ref(false);
     const showControls$$q = ref(false);
     const showOverlay$$q = ref(true);
+
+    let hls: Hls | undefined;
 
     onMounted(() => {
       const video = videoElement.value!;
@@ -33,8 +38,13 @@ export default {
 
       if (Hls.isSupported()) {
         isSupported = true;
-        const hls = new Hls({
+        hls = new Hls({
           fLoader: CustomFLoader,
+        });
+        hls.on('hlsError', (event, data) => {
+          if (data.type === 'networkError' && data.url.includes('.m3u8') && data.response.code === 404) {
+            emit('finish');
+          }
         });
         hls.loadSource(videoSrc);
         hls.attachMedia(video);
@@ -56,12 +66,18 @@ export default {
       });
 
       play$$q.value = () => {
+        play$$q.value = () => {};
+
         showControls$$q.value = true;
         showOverlay$$q.value = false;
 
-        video.currentTime = Math.max(video.duration - 3, 0);
+        video.currentTime = props.live ? Math.max(video.duration - 3, 0) : 0;
         video.play();
       };
+    });
+
+    onBeforeUnmount(() => {
+      hls?.destroy();
     });
 
     return {
@@ -89,5 +105,3 @@ export default {
     </template>
   </div>
 </template>
-
-
