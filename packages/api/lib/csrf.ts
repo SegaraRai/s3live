@@ -8,6 +8,7 @@ export function checkCSRF(
   if (!allowNoCustomHeader && req.method !== 'OPTIONS' && !req.headers['x-requested-with']) {
     throw new HTTPError(403);
   }
+
   if (
     req.headers.origin &&
     req.headers.origin !== process.env.FRONTEND_ORIGIN

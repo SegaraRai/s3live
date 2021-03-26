@@ -18,7 +18,9 @@ export function createPreflightAPIResponse(): Response {
   return new Response(null, {
     status: 204,
     headers: [
-      ['Access', 'HEAD, GET, POST, OPTIONS'],
+      ['Allow', 'GET, HEAD, OPTIONS, POST'],
+      ['Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS, POST'],
+      ['Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Requested-With'],
       ['Access-Control-Allow-Origin', process.env.FRONTEND_ORIGIN],
       ['Cache-Control', 'public'],
     ],
