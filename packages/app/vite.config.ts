@@ -86,5 +86,16 @@ export default defineConfig(({ mode }) => {
         },
       }),
     ],
+    server: {
+      proxy: {
+        '/api': {
+          target: 'https://live-api.null.lu',
+          changeOrigin: true,
+          headers: {
+            Origin: 'https://live.null.lu',
+          },
+        },
+      },
+    },
   };
 });

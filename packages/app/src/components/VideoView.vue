@@ -37,6 +37,9 @@ export default defineComponent({
 
         try {
           const liveInfo = await fetchLive(liveId$$q.value);
+
+          loading$$q.value = false;
+
           title$$q.value = liveInfo.live.title;
           finished$$q.value = !!liveInfo.live.finishedAt;
           ownerId$$q.value = liveInfo.live.userId;

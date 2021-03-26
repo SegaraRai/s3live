@@ -14,7 +14,7 @@ export const viewerCountUpdate = viewerCountExpiry - 10;
 export const viewerCountViewUpdate = 30;
 
 export function getPusherLiveKey(liveId: string): string {
-  return `l:${liveId}`;
+  return `l-${liveId}`;
 }
 
 export const pusherCommentEvent = 'c';
