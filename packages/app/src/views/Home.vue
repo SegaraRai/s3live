@@ -44,21 +44,21 @@ export default defineComponent({
 <template>
   <div>
     <div>
-      <p>
+      <p class="my-4">
         バックエンドにVercelとUpstashとWasabiを用いた低コストなライブ配信サービス
       </p>
-      <p>
+      <p class="my-4">
         ここはトップページです<br />
         動画は各配信URLから視聴できます
       </p>
-      <p>動画一覧は実装未定です</p>
+      <p class="my-4">動画一覧は実装未定です</p>
     </div>
-    <div>
-      <h2 class="text-lg">新規配信作成</h2>
+    <div class="mt-20 max-w-4xl">
+      <h2 class="text-xl">新規配信作成</h2>
       <div>
         <div class="mt-4">
           <div>
-            <div>
+            <div class="my-2">
               <label class="block">
                 <div
                   class="text-sm font-medium text-gray-700 dark:text-gray-400 transition-colors"
@@ -72,7 +72,7 @@ export default defineComponent({
                 />
               </label>
             </div>
-            <div>
+            <div class="my-2">
               <label class="block">
                 <div
                   class="text-sm font-medium text-gray-700 dark:text-gray-400 transition-colors"
@@ -88,7 +88,7 @@ export default defineComponent({
             </div>
           </div>
         </div>
-        <div class="mt-6 mb-2 w-full">
+        <div class="mt-6 w-full">
           <button
             type="button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-8 py-2 text-base font-medium text-white bg-green-600 disabled:bg-green-600 hover:bg-green-700 disabled:opacity-75 disabled:cursor-not-allowed"

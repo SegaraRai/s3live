@@ -6,7 +6,6 @@ import { postViewer } from '../lib/authAPI';
 export default defineComponent({
   props: {
     liveId: String,
-    count: Number,
   },
   setup(props) {
     const liveId = computed<string>(() => props.liveId);

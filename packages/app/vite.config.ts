@@ -1,5 +1,5 @@
 import vue from '@vitejs/plugin-vue';
-import { NodeTypes } from '@vue/compiler-core';
+import { AttributeNode, TemplateNode, TextNode } from '@vue/compiler-core';
 import camelCase from 'lodash.camelcase';
 import { defineConfig } from 'vite';
 
@@ -43,17 +43,21 @@ export default defineConfig(({ mode }) => {
         template: {
           compilerOptions: {
             nodeTransforms: [
-              (node): void => {
+              (_node): void => {
                 // NOTE: `const enum` cannot be used in vite.config.ts
-                switch (node.type) {
-                  case NodeTypes.ELEMENT: {
+                switch (_node.type) {
+                  /** NodeTypes.ELEMENT */
+                  case 1: {
+                    const node = _node as TemplateNode;
                     const { props } = node;
-                    for (const prop of props) {
-                      switch (prop.type) {
-                        case NodeTypes.ATTRIBUTE: {
-                          switch (prop.name) {
+                    for (const _prop of props) {
+                      switch (_prop.type) {
+                        /** NodeTypes.ATTRIBUTE */
+                        case 6: {
+                          switch (_prop.name) {
                             case 'class':
                               // sort classes
+                              const prop = _prop as AttributeNode;
                               const value = prop.value!;
                               value.content = value.content
                                 .trim()
@@ -69,9 +73,12 @@ export default defineConfig(({ mode }) => {
                     break;
                   }
 
-                  case NodeTypes.TEXT:
+                  /** NodeTypes.TEXT */
+                  case 2: {
+                    const node = _node as TextNode;
                     node.content = node.content.trim();
                     break;
+                  }
                 }
               },
             ],

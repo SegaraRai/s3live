@@ -9,10 +9,10 @@ export default defineComponent({
   },
   setup() {
     const liveId$$q = computed(
-      () => router.currentRoute.params.liveIdAndHash.split('-')[0]
+      () => router.currentRoute.value.params.liveIdAndHash.split('-')[0]
     );
     const hash$$q = computed(
-      () => router.currentRoute.params.liveIdAndHash.split('-')[1]
+      () => router.currentRoute.value.params.liveIdAndHash.split('-')[1]
     );
 
     return {
@@ -24,5 +24,5 @@ export default defineComponent({
 </script>
 
 <template>
-  <video-view :liveId="liveId$$q" :hash="hash$$q" />
+  <video-view :live-id="liveId$$q" :hash="hash$$q" />
 </template>

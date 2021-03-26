@@ -19,7 +19,7 @@ export default defineComponent({
     let channel: Channel | undefined;
     let timer: number | undefined;
 
-    const count = ref<number>(props.count);
+    const count = ref<number>(0);
 
     watch(liveId, (currentLiveId, oldLiveId) => {
       if (currentLiveId === oldLiveId) {
@@ -52,6 +52,16 @@ export default defineComponent({
       computed(() => props.liveId),
       (currentLiveId) => {
         liveId.value = currentLiveId;
+      },
+      {
+        immediate: true,
+      }
+    );
+
+    watch(
+      computed(() => props.count),
+      (currentCount) => {
+        count.value = currentCount;
       },
       {
         immediate: true,

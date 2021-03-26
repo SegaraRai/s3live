@@ -1,12 +1,13 @@
-import VueRouter from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 import Archive from './views/Archive.vue';
 import NotFound from './views/NotFound.vue';
 import Home from './views/Home.vue';
 import Live from './views/Live.vue';
+import Comments from './views/COmments.vue';
 
-export default new VueRouter({
-  mode: 'history',
+export default createRouter({
+  history: createWebHistory(),
   routes: [
     {
       name: 'home',
@@ -25,13 +26,18 @@ export default new VueRouter({
       component: Live,
     },
     {
+      name: 'comments',
+      path: `/lives/:liveId/comments`,
+      component: Comments,
+    },
+    {
       path: `/archives`,
       redirect: () => ({
         name: 'home',
       }),
     },
     {
-      name: 'live',
+      name: 'archive',
       path: `/archives/:liveIdAndHash`,
       component: Archive,
     },

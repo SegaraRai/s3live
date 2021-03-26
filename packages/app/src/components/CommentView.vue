@@ -16,7 +16,7 @@ export default defineComponent({
     let channel: Channel | undefined;
     const ownerId = computed(() => props.ownerId);
 
-    const comments = ref<Comment[]>(props.comments as Comment[]);
+    const comments = ref<Comment[]>([]);
 
     watch(liveId, (currentLiveId, oldLiveId) => {
       if (currentLiveId === oldLiveId) {
@@ -50,12 +50,29 @@ export default defineComponent({
       }
     );
 
+    watch(
+      computed(() => props.comments),
+      (currentComments) => {
+        comments.value = Array.from(
+          new Map(
+            [
+              ...comments.value,
+              ...(currentComments as Comment[]),
+            ].map((item) => [item.id, item])
+          ).values()
+        ).sort((a, b) => a.timestamp - b.timestamp);
+      },
+      {
+        immediate: true,
+      }
+    );
+
     onBeforeUnmount(() => {
       liveId.value = undefined;
     });
 
     return {
-      ownerId$$q: comments,
+      ownerId$$q: ownerId,
       comments$$q: comments,
     };
   },

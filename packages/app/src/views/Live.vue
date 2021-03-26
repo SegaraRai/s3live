@@ -8,7 +8,7 @@ export default defineComponent({
     VideoView,
   },
   setup() {
-    const liveId$$q = computed(() => router.currentRoute.params.liveId);
+    const liveId$$q = computed(() => router.currentRoute.value.params.liveId);
 
     return {
       liveId$$q,
@@ -18,5 +18,5 @@ export default defineComponent({
 </script>
 
 <template>
-  <video-view :liveId="liveId$$q" />
+  <video-view :live-id="liveId$$q" />
 </template>
