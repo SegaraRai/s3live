@@ -17,7 +17,7 @@ import { gzipAsync } from '../../../lib/gzip';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
 import { fetchLiveInfo, updateLiveInfo } from '../../../lib/live';
-import { createAPIResponse } from '../../../lib/response';
+import { createAPIResponse, createPreflightAPIResponse } from '../../../lib/response';
 import s3 from '../../../lib/s3';
 import { validate } from '../../../lib/validate';
 
@@ -30,13 +30,18 @@ export default createHandler(
       throw new HTTPError(404);
     }
 
-    const { liveId, userId } = await authLiveId(req);
-    if (liveId !== liveIdQ) {
-      throw new HTTPError(401);
+    if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
     }
 
     if (req.method !== 'POST') {
       throw new HTTPError(404);
+    }
+
+    const { liveId, userId } = await authLiveId(req);
+    if (liveId !== liveIdQ) {
+      throw new HTTPError(401);
     }
 
     const { fragmentDurations } = validate<POSTFinishRequest>(req.body, {

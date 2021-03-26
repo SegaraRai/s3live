@@ -1,1 +1,1 @@
-export const apiEndpoint = 'https://live.null.lu/api';
+export const apiEndpoint = 'https://live-api.null.lu/api';

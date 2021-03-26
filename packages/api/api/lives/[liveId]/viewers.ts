@@ -22,6 +22,7 @@ import {
 import pusher from '../../../lib/pusher';
 import {
   createAPIResponse,
+  createPreflightAPIResponse,
   createVoidAPIResponse,
 } from '../../../lib/response';
 
@@ -36,11 +37,17 @@ export default createHandler(
 
     await checkLiveIdExistence(liveId);
 
-    if (req.method === 'GET') {
+    if (req.method === 'GET' || req.method === 'HEAD') {
       // count viewers
-      return createAPIResponse<GETViewersResponse>({
-        viewerCount: await countLiveViewers(liveId),
-      });
+      return createAPIResponse<GETViewersResponse>(
+        {
+          viewerCount: await countLiveViewers(liveId),
+        },
+        req.method === 'HEAD'
+      );
+    } else if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
     } else if (req.method === 'POST') {
       // add viewer
       const { userId } = await authUserId(req);

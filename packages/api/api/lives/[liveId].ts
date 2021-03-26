@@ -10,7 +10,10 @@ import {
   fetchLiveComments,
   fetchLiveInfo,
 } from '../../lib/live';
-import { createAPIResponse } from '../../lib/response';
+import {
+  createAPIResponse,
+  createPreflightAPIResponse,
+} from '../../lib/response';
 
 export default createHandler(
   async (req: VercelRequest): Promise<Response> => {
@@ -21,7 +24,12 @@ export default createHandler(
       throw new HTTPError(404);
     }
 
-    if (req.method !== 'GET') {
+    if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
+    }
+
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
       throw new HTTPError(404);
     }
 
@@ -31,10 +39,13 @@ export default createHandler(
       countLiveViewers(liveId),
     ]);
 
-    return createAPIResponse<GETLiveResponse>({
-      live: info,
-      viewerCount,
-      comments,
-    });
+    return createAPIResponse<GETLiveResponse>(
+      {
+        live: info,
+        viewerCount,
+        comments,
+      },
+      req.method === 'HEAD'
+    );
   }
 );

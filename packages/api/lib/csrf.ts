@@ -5,7 +5,7 @@ export function checkCSRF(
   req: VercelRequest,
   allowNoCustomHeader = false
 ): void {
-  if (!allowNoCustomHeader && !req.headers['x-requested-with']) {
+  if (!allowNoCustomHeader && req.method !== 'OPTIONS' && !req.headers['x-requested-with']) {
     throw new HTTPError(403);
   }
   if (

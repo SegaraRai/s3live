@@ -7,7 +7,10 @@ import { HTTPError } from '../../../lib/error';
 import { generateFragmentPathname } from '../../../lib/fragment';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
-import { createAPIResponse } from '../../../lib/response';
+import {
+  createAPIResponse,
+  createPreflightAPIResponse,
+} from '../../../lib/response';
 import { getSignedS3URL } from '../../../lib/s3';
 
 const maxNum = 100;
@@ -21,13 +24,18 @@ export default createHandler(
       throw new HTTPError(404);
     }
 
+    if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
+    }
+
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      throw new HTTPError(404);
+    }
+
     const { liveId, userId } = await authLiveId(req);
     if (liveId !== liveIdQ) {
       throw new HTTPError(401);
-    }
-
-    if (req.method !== 'GET') {
-      throw new HTTPError(404);
     }
 
     const from = parseInt(String(req.query.from) || '', 10);
@@ -52,6 +60,6 @@ export default createHandler(
       })
     );
 
-    return createAPIResponse<GETLivesURLsResponse>(urls);
+    return createAPIResponse<GETLivesURLsResponse>(urls, req.method === 'HEAD');
   }
 );

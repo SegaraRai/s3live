@@ -24,6 +24,7 @@ import {
 import pusher from '../../../lib/pusher';
 import {
   createAPIResponse,
+  createPreflightAPIResponse,
   createVoidAPIResponse,
 } from '../../../lib/response';
 import { validate } from '../../../lib/validate';
@@ -37,11 +38,15 @@ export default createHandler(
       throw new HTTPError(404);
     }
 
-    if (req.method === 'GET') {
+    if (req.method === 'GET' || req.method === 'HEAD') {
       // get all comments
       return createAPIResponse<GETCommentsResponse>(
-        await fetchLiveComments(liveId)
+        await fetchLiveComments(liveId),
+        req.method === 'HEAD'
       );
+    } else if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
     } else if (req.method === 'POST') {
       // post comment
       const { userId } = await authUserId(req);

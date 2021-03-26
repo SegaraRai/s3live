@@ -13,7 +13,10 @@ import { generateFragmentPathname } from '../../../lib/fragment';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
 import { fetchLivePlaylist, updateLivePlaylist } from '../../../lib/live';
-import { createVoidAPIResponse } from '../../../lib/response';
+import {
+  createPreflightAPIResponse,
+  createVoidAPIResponse,
+} from '../../../lib/response';
 import type { RedisPlaylist } from '../../../lib/types';
 import { validate } from '../../../lib/validate';
 
@@ -24,7 +27,7 @@ export default createHandler(
       throw new HTTPError(404);
     }
 
-    if (req.method === 'GET') {
+    if (req.method === 'GET' || req.method === 'HEAD') {
       checkCSRF(req, true);
 
       const playlist = await fetchLivePlaylist(liveId);
@@ -42,7 +45,7 @@ ${process.env.FRAGMENT_BASE_URI}/${generateFragmentPathname(
         )}
 `;
       }
-      return new Response(strPlaylist, {
+      return new Response(req.method === 'HEAD' ? null : strPlaylist, {
         status: 200,
         headers: [
           ['Access-Control-Allow-Origin', process.env.FRONTEND_ORIGIN],
@@ -50,6 +53,9 @@ ${process.env.FRAGMENT_BASE_URI}/${generateFragmentPathname(
           ['Content-Type', playlistContentType],
         ],
       });
+    } else if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
     } else if (req.method === 'POST') {
       checkCSRF(req);
 

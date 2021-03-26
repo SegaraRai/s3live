@@ -1,12 +1,26 @@
 import { Response } from 'node-fetch';
 
-export function createAPIResponse<T = unknown>(payload: T): Response {
-  return new Response(JSON.stringify(payload, null, 2), {
+export function createAPIResponse<T = unknown>(
+  payload: T,
+  isHEAD = false
+): Response {
+  return new Response(isHEAD ? null : JSON.stringify(payload, null, 2), {
     status: 200,
     headers: [
       ['Access-Control-Allow-Origin', process.env.FRONTEND_ORIGIN],
       ['Content-Type', 'application/json; charset=UTF-8'],
       ['Cache-Control', 'no-store'],
+    ],
+  });
+}
+
+export function createPreflightAPIResponse(): Response {
+  return new Response(null, {
+    status: 204,
+    headers: [
+      ['Access', 'HEAD, GET, POST, OPTIONS'],
+      ['Access-Control-Allow-Origin', process.env.FRONTEND_ORIGIN],
+      ['Cache-Control', 'public'],
     ],
   });
 }

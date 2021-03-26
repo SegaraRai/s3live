@@ -6,11 +6,16 @@ import { checkCSRF } from '../lib/csrf';
 import { HTTPError } from '../lib/error';
 import { createHandler } from '../lib/handler';
 import { generateUserId } from '../lib/id';
-import { createAPIResponse } from '../lib/response';
+import { createAPIResponse, createPreflightAPIResponse } from '../lib/response';
 
 export default createHandler(
   async (req: VercelRequest): Promise<Response> => {
     checkCSRF(req);
+
+    if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
+    }
 
     if (req.method !== 'POST') {
       throw new HTTPError(404);

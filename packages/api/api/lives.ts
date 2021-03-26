@@ -8,12 +8,17 @@ import { HTTPError } from '../lib/error';
 import { createHandler } from '../lib/handler';
 import { generateLiveId } from '../lib/id';
 import redis, { getRedisLiveKey } from '../lib/redis';
-import { createAPIResponse } from '../lib/response';
+import { createAPIResponse, createPreflightAPIResponse } from '../lib/response';
 import { validate } from '../lib/validate';
 
 export default createHandler(
   async (req: VercelRequest): Promise<Response> => {
     checkCSRF(req);
+
+    if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
+    }
 
     if (req.method !== 'POST') {
       throw new HTTPError(404);

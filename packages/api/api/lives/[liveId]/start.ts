@@ -6,7 +6,7 @@ import { HTTPError } from '../../../lib/error';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
 import { fetchLiveInfo, updateLiveInfo } from '../../../lib/live';
-import { createVoidAPIResponse } from '../../../lib/response';
+import { createPreflightAPIResponse, createVoidAPIResponse } from '../../../lib/response';
 
 export default createHandler(
   async (req: VercelRequest): Promise<Response> => {
@@ -17,13 +17,18 @@ export default createHandler(
       throw new HTTPError(404);
     }
 
-    const { liveId } = await authLiveId(req);
-    if (liveId !== liveIdQ) {
-      throw new HTTPError(401);
+    if (req.method === 'OPTIONS') {
+      // preflight request
+      return createPreflightAPIResponse();
     }
 
     if (req.method !== 'POST') {
       throw new HTTPError(404);
+    }
+
+    const { liveId } = await authLiveId(req);
+    if (liveId !== liveIdQ) {
+      throw new HTTPError(401);
     }
 
     const data = await fetchLiveInfo(liveId);
