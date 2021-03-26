@@ -45,7 +45,7 @@ export default defineComponent({
   <div>
     <div>
       <p class="my-4">
-        バックエンドにVercelとUpstashとWasabiを用いた低コストなライブ配信サービス
+        バックエンドにVercelとUpstashとWasabiを用いたサーバーレスで低コストなライブ配信サービス
       </p>
       <p class="my-4">
         ここはトップページです<br />
