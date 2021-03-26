@@ -4,7 +4,7 @@ import Archive from './views/Archive.vue';
 import NotFound from './views/NotFound.vue';
 import Home from './views/Home.vue';
 import Live from './views/Live.vue';
-import Comments from './views/COmments.vue';
+import Comments from './views/Comments.vue';
 
 export default createRouter({
   history: createWebHistory(),
