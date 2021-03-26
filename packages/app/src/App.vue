@@ -1,12 +1,12 @@
 <script lang="ts">
-import { ref, watch } from 'vue';
+import { defineComponent, ref } from 'vue';
 import LiveVideo from './components/LiveVideo.vue';
 
 function getPlaylistURL(id: string, type: string): string {
-  return `https://${import.meta.env.VITE_S3_BASE_URL}/${id}/${type}.m3u8?response-Cache-Control=no-store`;
+  return `/api/lives/${id}/${type}.m3u8`;
 }
 
-export default {
+export default defineComponent({
   components: {
     LiveVideo,
   },
@@ -28,10 +28,7 @@ export default {
 
       (async () => {
         try {
-          const [
-            liveResponse,
-            archiveResponse,
-          ] = await Promise.all([
+          const [liveResponse, archiveResponse] = await Promise.all([
             fetch(liveURL, {
               method: 'HEAD',
             }),
@@ -78,32 +75,26 @@ export default {
       },
     };
   },
-};
+});
 </script>
 
 <template>
-  <main class="container mx-auto">
-    <template v-if="src$$q">
-      <div v-show="!loading$$q" class="flex flex-row items-center min-h-screen">
-        <live-video :src="src$$q" :live="live$$q" @ready="loading$$q = false" @error="error$$q = $event.target.value" @finish="reload$$q" />
-      </div>
-    </template>
-    <template v-if="hasArchive$$q">
-      <div class="absolute left-0 top-0 w-full h-full pt-8">
-        Live Streaming Finished.<br>
-        <a :href="archiveURL$$q" class="text-blue-600">View Archive</a>
-      </div>
-    </template>
-    <template v-if="loading$$q && !error$$q && !hasArchive$$q">
-      <div class="absolute left-0 top-0 w-full h-full flex items-center justify-center bg-white bg-opacity-25 text-blue-400">
-        <svg class="animate-spin w-32 h-32" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      </div>
-    </template>
-    <template v-if="error$$q">
-      <p class="mt-8 text-xl text-red-500">{{error$$q}}</p>
-    </template>
-  </main>
+  <div>
+    <div class="p-2">
+      <h1 class="text-xl leading-tight">s3live</h1>
+    </div>
+    <main class="container mx-auto">
+      <router-view />
+    </main>
+  </div>
 </template>
+
+<style module>
+.comment {
+  @apply block;
+}
+
+.owner {
+  @apply text-red-500;
+}
+</style>

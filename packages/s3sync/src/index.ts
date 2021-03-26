@@ -1,134 +1,145 @@
 import { readdir, unlink, mkdir, readFile } from 'fs/promises';
-import { basename, dirname, join, relative } from 'path';
-import { S3 } from '@aws-sdk/client-s3';
+import LRUCache from 'lru-cache';
+import { basename, dirname, join } from 'path';
+import {
+  fetchLiveFragmentURL,
+  finishLive,
+  startLive,
+  uploadLivePlaylist,
+} from './api';
+import {
+  fragmentCacheControl,
+  fragmentContentType,
+  fragmentsPerPlaylist,
+} from './commonConfig';
 
 /** msec */
 const poolInterval = 200 as const;
 
-const liveDataDir = '/live/data' as const;
-
-const archivePlaylistFilename = 'archive.m3u8' as const;
-const livePlaylistFilename = 'live.m3u8' as const;
-
-const fragmentMIMEType = 'video/mp2t' as const;
-const playlistMIMEType = 'application/vnd.apple.mpegurl' as const;
-
-const {
-  AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY,
-  S3_BUCKET_PATH,
-  S3_ENDPOINT_URL,
-  S3_REGION,
-} = process.env;
-
 function sleep(time: number): Promise<void> {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     setTimeout(resolve, time);
   });
 }
 
-async function proc() {
-  const s3 = new S3({
-    credentials: {
-      accessKeyId: AWS_ACCESS_KEY_ID!,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY!,
-    },
-    endpoint: S3_ENDPOINT_URL || undefined,
-    region: S3_REGION || undefined,
-  });
-
+async function proc(liveId: string, token: string) {
   const playlistFilepath = process.argv[2];
 
   const streamDir = dirname(playlistFilepath);
   const playlistFilename = basename(playlistFilepath);
 
-  const bucket = S3_BUCKET_PATH!.split('/')[0];
+  const indexToDuration: number[] = [];
+  const filenameToIndex = new LRUCache<string, number>({
+    max: 10,
+  });
 
-  let keyPrefix = [
-    S3_BUCKET_PATH!.split('/').slice(1),
-    relative(liveDataDir, streamDir),
-  ].filter(x => x).join('/');
+  let lastFragmentIndex = -1;
 
-  if (keyPrefix) {
-    keyPrefix += '/';
-  }
-
-  let maxFragmentDuration = 0;
-  const archivedFragmentFilenameSet = new Set<string>();
-  let archivePlaylistBody = '';
-
-  const uploadFragment = async (filename: string): Promise<void> => {
+  const uploadFragment = async (
+    filename: string,
+    index: number
+  ): Promise<void> => {
     try {
       const filepath = join(streamDir, filename);
-
       const content = await readFile(filepath);
-
-      await s3.putObject({
-        Bucket: bucket,
-        Key: keyPrefix + filename,
-        Body: content,
-        ContentType: fragmentMIMEType,
-      });
-
+      const response = await fetch(
+        await fetchLiveFragmentURL(liveId, token, index),
+        {
+          method: 'PUT',
+          headers: [
+            ['Cache-Control', fragmentCacheControl],
+            ['Content-Type', fragmentContentType],
+          ],
+          body: content,
+        }
+      );
+      if (!response.ok) {
+        throw new Error('failed to upload fragment');
+      }
       await unlink(filepath);
 
       console.log(`[F] uploaded ${filepath}`);
     } catch (error) {
-      process.stderr.write(`[ERROR] failed to upload fragment ${filename}\n${error}`);
+      process.stderr.write(
+        `[ERROR] failed to upload fragment ${filename}\n${error}`
+      );
     }
   };
 
   const uploadPlaylist = async (filename: string): Promise<void> => {
     try {
       const filepath = join(streamDir, filename);
-
       const content = await readFile(filepath, 'utf-8');
 
-      const fragments = content
-        .split('\n')
-        .filter(line => line && /^#EXTINF:|^[^#]/.test(line));
-
-      for (let i = 0; i < fragments.length; i += 2) {
-        const [extInf, fragmentFilename] = fragments.slice(i);
-
-        if (archivedFragmentFilenameSet.has(fragmentFilename)) {
+      let targetDuration: number | undefined;
+      const indices: number[] = [];
+      let nextDuration: number | undefined;
+      for (const line of content.split(/\r?\n/)) {
+        if (!line) {
           continue;
         }
 
-        archivedFragmentFilenameSet.add(fragmentFilename);
-        archivePlaylistBody += extInf + '\n' + fragmentFilename + '\n';
-
-        const fragmentDuration = parseInt(extInf.split(/[:,]/)[1], 10);
-        maxFragmentDuration = Math.max(maxFragmentDuration, fragmentDuration);
+        let match: RegExpMatchArray | null;
+        if ((match = line.match(/^#EXTINF:([\d.]+)/))) {
+          nextDuration = parseFloat(match[1]);
+        } else if ((match = line.match(/^#EXT-X-TARGETDURATION:([\d.]+)/))) {
+          targetDuration = Math.ceil(parseFloat(match[1]));
+        } else if (/^[^#]/.test(line)) {
+          if (!nextDuration) {
+            throw new Error('nextDuration not specified');
+          }
+          const index = filenameToIndex.get(line);
+          if (index == null) {
+            throw new Error(`index of ${line} not registered`);
+          }
+          indexToDuration[index] = nextDuration;
+          indices.push(index);
+          nextDuration = undefined;
+        }
       }
 
-      const archivePlaylistPreamble = `
-#EXTM3U
-#EXT-X-VERSION:3
-#EXT-X-MEDIA-SEQUENCE:1
-#EXT-X-TARGETDURATION:${Math.ceil(maxFragmentDuration)}
-`.trim() + '\n';
+      if (indices.some((index, i) => index !== i + indices[0])) {
+        throw new Error('invalid indices');
+      }
 
-      await Promise.all([
-        s3.putObject({
-          Bucket: bucket,
-          Key: keyPrefix + archivePlaylistFilename,
-          Body: archivePlaylistPreamble + archivePlaylistBody,
-          ContentType: playlistMIMEType,
-        }),
-        s3.putObject({
-          Bucket: bucket,
-          Key: keyPrefix + livePlaylistFilename,
-          Body: content,
-          ContentType: playlistMIMEType,
-        }),
-      ]);
+      const firstIndex = Math.max(
+        lastFragmentIndex - fragmentsPerPlaylist + 1,
+        0
+      );
+      const fragmentDurations: number[] = [];
+      for (let index = firstIndex; index <= lastFragmentIndex; index++) {
+        const duration = indexToDuration[index];
+        if (!duration) {
+          throw new Error(`duration of ${index} not registered`);
+        }
+        fragmentDurations.push(duration);
+      }
 
-      console.log(`[P] uploaded ${filepath} (${content.split('\n').filter(x => x && !x.startsWith('#')).join(', ')})`);
+      if (!targetDuration) {
+        targetDuration = Math.ceil(Math.max(...fragmentDurations));
+      }
+
+      await uploadLivePlaylist(liveId, token, {
+        firstIndex,
+        fragmentDurations,
+        targetDuration,
+      });
+
+      console.log(
+        `[P] uploaded ${filepath} (${content
+          .split('\n')
+          .filter((x) => x && !x.startsWith('#'))
+          .join(', ')})`
+      );
     } catch (error) {
-      process.stderr.write(`[ERROR] failed to upload playlist ${filename}\n${error}`);
+      process.stderr.write(
+        `[ERROR] failed to upload playlist ${filename}\n${error}`
+      );
     }
   };
+
+  // start live
+  await startLive(liveId, token);
 
   // create stream dir
   try {
@@ -160,10 +171,10 @@ async function proc() {
 
       // list .ts files in ascending order
       const fragmentFilenames = files
-        .map(filename => [filename, filename.match(/-(\d+)\.ts$/)] as const)
-        .filter(item => item[1])
+        .map((filename) => [filename, filename.match(/(\d+)\.ts$/)] as const)
+        .filter((item) => item[1])
         .sort((a, b) => parseInt(a[1]![1], 10) - parseInt(b[1]![1], 10))
-        .map(item => item[0]);
+        .map((item) => item[0]);
 
       // exclude latest (currently processing) .ts file if streaming not finished
       if (!finished) {
@@ -175,8 +186,18 @@ async function proc() {
         continue;
       }
 
+      for (const filename of fragmentFilenames) {
+        if (!filenameToIndex.has(filename)) {
+          filenameToIndex.set(filename, ++lastFragmentIndex);
+        }
+      }
+
       // upload and delete fragments
-      await Promise.all(fragmentFilenames.map(uploadFragment));
+      await Promise.all(
+        fragmentFilenames.map((filename) =>
+          uploadFragment(filename, filenameToIndex.get(filename)!)
+        )
+      );
 
       // upload playlist
       if (!finished) {
@@ -190,15 +211,17 @@ async function proc() {
   // live streaming finished
 
   // delete live.m3u8
-  await s3.deleteObject({
-    Bucket: bucket,
-    Key: keyPrefix + livePlaylistFilename,
+  const { playlistKey } = await finishLive(liveId, token, {
+    fragmentDurations: indexToDuration,
   });
+
+  console.log(`finished; playlistKey = ${playlistKey}`);
 }
 
 async function main() {
+  const [, , liveId, token] = process.argv;
   while (true) {
-    await proc();
+    await proc(liveId, token);
   }
 }
 
