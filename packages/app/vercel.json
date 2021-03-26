@@ -1,0 +1,25 @@
+{
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/lives",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/lives/:liveId",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/lives/:liveId/comments",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/archives",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/archives/:liveId",
+      "destination": "/index.html"
+    }
+  ]
+}
