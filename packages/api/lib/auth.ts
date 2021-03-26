@@ -50,7 +50,7 @@ function parseSubAsUserId(
   if (!sub) {
     return;
   }
-  const match = sub.match(/^users\/[a-z\d-]+$/);
+  const match = sub.match(/^users\/([a-z\d-]+)$/);
   if (!match) {
     return;
   }
@@ -65,7 +65,7 @@ function parseSubAsLiveId(
   if (!sub) {
     return;
   }
-  const match = sub.match(/^users\/[a-z\d-]+\/lives\/[a-z\d-]+$/);
+  const match = sub.match(/^users\/([a-z\d-]+)\/lives\/([a-z\d-]+)$/);
   if (!match) {
     return;
   }
