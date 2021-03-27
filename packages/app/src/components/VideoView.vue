@@ -36,11 +36,6 @@ export default defineComponent({
     hash: String,
   },
   setup(props) {
-    let channel: Channel | undefined;
-    let listeningLiveId: string | undefined;
-
-    //
-
     const userId$$q = ref('');
     fetchUserId().then((userId) => {
       userId$$q.value = userId;
@@ -109,6 +104,7 @@ export default defineComponent({
 
     //
 
+    let channel: Channel | undefined;
     const cleanupChannel = () => {
       if (channel) {
         channel.unbind(pusherFinishEvent);
@@ -137,6 +133,7 @@ export default defineComponent({
             reloadCounter$$q.value++;
           }
         });
+        // we use `pusherPlaylistEvent` since the playlist is not yet uploaded at `pusherStartEvent`
         channel.bind(pusherPlaylistEvent, () => {
           if (liveId$$q.value !== currentLiveId) {
             return;
