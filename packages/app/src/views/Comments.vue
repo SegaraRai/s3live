@@ -45,20 +45,44 @@ export default defineComponent({
   <div>
     <template v-if="ownerId$$q">
       <comment-view
+        :class="$style.comments$$q"
         :live-id="liveId$$q"
         :owner-id="ownerId$$q"
         :comments="comments$$q"
+        user-id=""
       />
     </template>
   </div>
 </template>
 
+
 <style module>
-.comment {
-  @apply block;
+.comments > :global(.comment) {
+  @apply whitespace-normal;
+  @apply break-all;
+  @apply px-2;
+  @apply my-2;
+  @apply flex;
+  @apply items-center;
 }
 
-.owner {
-  @apply text-red-500;
+.comments > :global(.comment--owner) > :global(.comment__body) {
+  @apply font-bold;
+  @apply text-green-600;
+}
+
+.comments > :global(.comment) > :global(.comment__body) {
+  @apply flex-grow;
+}
+
+.comments > :global(.comment) > :global(.comment__time) {
+  @apply flex-grow-0;
+  @apply flex-shrink-0;
+  @apply w-14;
+  @apply text-right;
+  @apply text-gray-600;
+  @apply font-semibold;
+  @apply font-mono;
+  @apply tabular-nums;
 }
 </style>

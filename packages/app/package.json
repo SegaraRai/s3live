@@ -8,6 +8,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@tailwindcss/aspect-ratio": "^0.2.0",
     "hls.js": "^0.14.17",
     "pusher-js": "^7.0.3",
     "tailwindcss": "^2.0.4",

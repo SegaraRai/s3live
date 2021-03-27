@@ -3,6 +3,7 @@ import { Channel } from 'pusher-js';
 import { computed, defineComponent, onBeforeUnmount, ref, watch } from 'vue';
 import { fetchViewers } from '../lib/api';
 import {
+  getPusherLiveKey,
   pusherViewerCountEvent,
   viewerCountViewUpdate,
 } from '../lib/commonConfig';
@@ -36,7 +37,7 @@ export default defineComponent({
         count.value = 0;
       }
       if (currentLiveId) {
-        channel = pusher.subscribe(currentLiveId);
+        channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
         channel.bind(pusherViewerCountEvent, (data: ViewerCount) => {
           count.value = data.viewerCount;
         });
@@ -44,7 +45,7 @@ export default defineComponent({
           fetchViewers(currentLiveId).then((data) => {
             count.value = data.viewerCount;
           });
-        }, viewerCountViewUpdate);
+        }, viewerCountViewUpdate * 1000);
       }
     });
 
@@ -84,5 +85,5 @@ export default defineComponent({
 </script>
 
 <template>
-  <div>{{ count }}</div>
+  <div>{{ count$$q }}</div>
 </template>

@@ -6,6 +6,10 @@ export const playlistContentType = 'application/vnd.apple.mpegurl';
 
 export const archivePlaylistCacheControl = 'public, immutable';
 
+export const maxTitleLength = 60;
+
+export const maxCommentLength = 200;
+
 export const presignedURLExpiry = 600;
 
 export const viewerCountExpiry = 60;

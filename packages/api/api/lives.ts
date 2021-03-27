@@ -2,6 +2,7 @@ import { VercelRequest } from '@vercel/node';
 import { Response } from 'node-fetch';
 import type { POSTLivesRequest, POSTLivesResponse } from '../lib/apiTypes';
 import { authUserId, issueLiveIdJWT } from '../lib/auth';
+import { maxTitleLength } from '../lib/commonConfig';
 import { Live } from '../lib/commonTypes';
 import { checkCSRF } from '../lib/csrf';
 import { HTTPError } from '../lib/error';
@@ -40,9 +41,12 @@ export default createHandler(
         title: {
           type: 'string',
           pattern: '\\S',
+          minLength: 1,
+          maxLength: maxTitleLength,
         },
         key: {
           type: 'string',
+          minLength: 1,
         },
       },
     });

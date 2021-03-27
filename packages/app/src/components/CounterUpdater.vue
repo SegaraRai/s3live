@@ -21,9 +21,10 @@ export default defineComponent({
           clearInterval(timer);
           timer = undefined;
         }
+        postViewer(currentLiveId);
         timer = setInterval(() => {
           postViewer(currentLiveId);
-        }, viewerCountUpdate);
+        }, viewerCountUpdate * 1000);
       },
       {
         immediate: true,
@@ -41,3 +42,5 @@ export default defineComponent({
   },
 });
 </script>
+
+<template></template>

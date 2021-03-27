@@ -91,7 +91,7 @@ export default defineComponent({
         <div class="mt-6 w-full">
           <button
             type="button"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-8 py-2 text-base font-medium text-white bg-green-600 disabled:bg-green-600 hover:bg-green-700 disabled:opacity-75 disabled:cursor-not-allowed"
+            class="w-full inline-flex justify-center rounded-sm border border-transparent shadow-sm px-8 py-2 text-base font-medium text-white bg-green-600 disabled:bg-green-600 hover:bg-green-700 disabled:opacity-75 disabled:cursor-not-allowed"
             :disabled="!newLiveOk$$q"
             @click="createLive$$q"
           >

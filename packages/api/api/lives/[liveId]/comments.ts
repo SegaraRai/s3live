@@ -8,6 +8,7 @@ import type {
 import { authUserId } from '../../../lib/auth';
 import {
   getPusherLiveKey,
+  maxCommentLength,
   pusherCommentEvent,
 } from '../../../lib/commonConfig';
 import type { Comment } from '../../../lib/commonTypes';
@@ -64,6 +65,8 @@ export default createHandler(
           content: {
             type: 'string',
             pattern: '\\S',
+            minLength: 1,
+            maxLength: maxCommentLength,
           },
         },
       });

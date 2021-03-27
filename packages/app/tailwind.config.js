@@ -28,5 +28,8 @@ module.exports = {
     backgroundColor: ['dark', 'DEFAULT', 'hover', 'disabled'],
     cursor: ['DEFAULT', 'disabled'],
   },
-  plugins: [],
+  plugins: [
+    //
+    require('@tailwindcss/aspect-ratio'),
+  ],
 };
