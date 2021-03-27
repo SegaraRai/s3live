@@ -1,5 +1,6 @@
 import { readdir, unlink, mkdir, readFile } from 'fs/promises';
 import LRUCache from 'lru-cache';
+import fetch from 'node-fetch';
 import { basename, dirname, join } from 'path';
 import {
   fetchLiveFragmentURL,
@@ -136,9 +137,6 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
     }
   };
 
-  // start live
-  await startLive(liveId, token);
-
   // create stream dir
   try {
     await mkdir(streamDir, {
@@ -163,6 +161,11 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
         }
 
         finished = true;
+      }
+
+      if (!started) {
+        // start live
+        //await startLive(liveId, token);
       }
 
       started = true;
@@ -192,9 +195,13 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
 
       // upload and delete fragments
       await Promise.all(
-        fragmentFilenames.map((filename) =>
-          uploadFragment(filename, filenameToIndex.get(filename)!)
-        )
+        fragmentFilenames.map(async (filename) => {
+          const index = filenameToIndex.get(filename);
+          if (index == null) {
+            throw new Error(`index of ${filename} not registered`);
+          }
+          uploadFragment(filename, index);
+        })
       );
 
       // upload playlist

@@ -38,12 +38,12 @@ export default createHandler(
       throw new HTTPError(401);
     }
 
-    const from = parseInt(String(req.query.from) || '', 10);
+    const from = parseInt(String(req.query.from), 10);
     if (isNaN(from) || from < 0) {
       throw new HTTPError(400);
     }
 
-    const num = parseInt(String(req.query.num) || '', 10);
+    const num = parseInt(String(req.query.num), 10);
     if (isNaN(num) || num < 1 || num > maxNum) {
       throw new HTTPError(400);
     }

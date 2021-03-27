@@ -11,7 +11,7 @@ import { apiEndpoint } from './config';
 
 const cache = new LRUCache<number, Promise<readonly GETLivesURLsResponseURL[]>>(
   {
-    max: 3,
+    max: 5,
   }
 );
 
@@ -27,13 +27,18 @@ async function fetchSignedURLPage(
     cache.set(
       key,
       (async () => {
-        const response = await fetch(`${apiEndpoint}/lives/${liveId}/urls`, {
-          method: 'GET',
-          headers: [
-            ['Authorization', `Bearer ${token}`],
-            ['X-Requested-With', 'node-fetch'],
-          ],
-        });
+        const response = await fetch(
+          `${apiEndpoint}/lives/${liveId}/urls?from=${
+            key * urlsPerPage
+          }&num=${urlsPerPage}`,
+          {
+            method: 'GET',
+            headers: [
+              ['Authorization', `Bearer ${token}`],
+              ['X-Requested-With', 'node-fetch'],
+            ],
+          }
+        );
         if (!response.ok) {
           throw new Error(`API error ${response.status} at fetchSignedURLPage`);
         }
@@ -77,6 +82,7 @@ export async function finishLive(
     method: 'POST',
     headers: [
       ['Authorization', `Bearer ${token}`],
+      ['Content-Type', 'application/json; charset=UTF-8'],
       ['X-Requested-With', 'node-fetch'],
     ],
     body: JSON.stringify(payload),
@@ -96,6 +102,7 @@ export async function uploadLivePlaylist(
     method: 'POST',
     headers: [
       ['Authorization', `Bearer ${token}`],
+      ['Content-Type', 'application/json; charset=UTF-8'],
       ['X-Requested-With', 'node-fetch'],
     ],
     body: JSON.stringify(payload),

@@ -74,7 +74,7 @@ ${process.env.FRAGMENT_BASE_URI}/${generateFragmentPathname(
         properties: {
           firstIndex: {
             type: 'integer',
-            minimum: 1,
+            minimum: 0,
           },
           targetDuration: {
             type: 'integer',

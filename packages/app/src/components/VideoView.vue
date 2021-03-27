@@ -194,13 +194,20 @@ export default defineComponent({
     watch(loading$$q, () => {
       nextTick(resizeComments);
     });
+    window.addEventListener('resize', resizeComments);
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', resizeComments);
+    });
 
     //
 
     const commentsAutoScrollEnabled$$q = ref(true);
     const autoScroll$$q = () => {
       nextTick(() => {
-        if (commentsAutoScrollEnabled$$q.value && elCommentsContainer$$q.value) {
+        if (
+          commentsAutoScrollEnabled$$q.value &&
+          elCommentsContainer$$q.value
+        ) {
           elCommentsContainer$$q.value.scrollTop =
             elCommentsContainer$$q.value.scrollHeight;
         }
@@ -359,14 +366,14 @@ export default defineComponent({
               <div class="bg-white p-2 border-gray-500 border-b-2">
                 <div class="relative">
                   <textarea
-                    class="block w-full overflow-auto whitespace-normal break-all bg-transparent outline-none"
+                    class="block w-full max-h-32 overflow-auto whitespace-normal break-all bg-transparent outline-none"
                     ref="elTextArea$$q"
                     placeholder="コメントを入力……"
                     v-model="newComment$$q"
                     @keyup.ctrl.enter.stop="postComment$$q"
                   />
                   <div
-                    class="absolute top-0 left-0 w-full flex justify-center items-center bg-white bg-opacity-90"
+                    class="absolute top-0 left-0 w-full max-h-32 flex justify-center items-center bg-white bg-opacity-90"
                     ref="elTextAreaSpinner$$q"
                     v-show="newCommentPosting$$q"
                   >
