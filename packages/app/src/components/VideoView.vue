@@ -283,7 +283,6 @@ export default defineComponent({
                 :hash="hash$$q"
                 @ready="loading$$q = false"
                 @error="error$$q = $event.target.value"
-                @finish="reload$$q"
               />
               <div
                 class="absolute left-0 top-0 w-full h-full flex items-center justify-center bg-white bg-opacity-25 text-blue-400"

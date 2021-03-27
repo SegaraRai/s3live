@@ -65,11 +65,8 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
     }
   };
 
-  const uploadPlaylist = async (filename: string): Promise<void> => {
+  const uploadPlaylist = async (content: string): Promise<void> => {
     try {
-      const filepath = join(streamDir, filename);
-      const content = await readFile(filepath, 'utf-8');
-
       let targetDuration: number | undefined;
       const indices: number[] = [];
       let nextDuration: number | undefined;
@@ -125,14 +122,14 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
       });
 
       console.log(
-        `[P] uploaded ${filepath} (${content
+        `[P] uploaded (${content
           .split('\n')
           .filter((x) => x && !x.startsWith('#'))
           .join(', ')})`
       );
     } catch (error) {
       process.stderr.write(
-        `[ERROR] failed to upload playlist ${filename}\n${error}`
+        `[ERROR] failed to upload playlist \n${error}`
       );
     }
   };
@@ -170,6 +167,8 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
 
       started = true;
 
+      const playlistContent = await readFile(join(streamDir, playlistFilename), 'utf-8');
+
       // list .ts files in ascending order
       const fragmentFilenames = files
         .map((filename) => [filename, filename.match(/(\d+)\.ts$/)] as const)
@@ -200,13 +199,13 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
           if (index == null) {
             throw new Error(`index of ${filename} not registered`);
           }
-          uploadFragment(filename, index);
+          await uploadFragment(filename, index);
         })
       );
 
       // upload playlist
       if (!finished) {
-        await uploadPlaylist(playlistFilename);
+        await uploadPlaylist(playlistContent);
       }
     } catch (error) {
       process.stderr.write(`[ERROR] error occurred in main loop\n${error}`);

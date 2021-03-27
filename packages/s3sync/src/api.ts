@@ -47,8 +47,16 @@ async function fetchSignedURLPage(
       })()
     );
   }
-  const page = await cache.get(key)!;
-  return page.find((item) => item.index === index)!.url;
+  const pagePromise = cache.get(key);
+  if (!pagePromise) {
+    throw new Error(`pagePromise of ${key} not registered`);
+  }
+  const page = await pagePromise;
+  const item = page.find((v) => v.index === index);
+  if (!item) {
+    throw new Error(`item of ${index} not found`);
+  }
+  return item.url;
 }
 
 export async function fetchLiveFragmentURL(

@@ -52,7 +52,7 @@ export default createHandler(
       new Array(num).fill(0).map(async (_, i) => {
         const index = i + from;
         return {
-          index: i,
+          index,
           url: await getSignedS3URL(
             generateFragmentPathname(userId, liveId, index)
           ),
