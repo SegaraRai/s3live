@@ -224,8 +224,8 @@ export default defineComponent({
       },
       userId$$q,
       maxCommentLength$$q: maxCommentLength,
-      textArea$$q,
-      textAreaSpinner$$q,
+      t: textArea$$q,
+      s: textAreaSpinner$$q,
       newComment$$q,
       newCommentPosting$$q,
       newCommentOk$$q,
@@ -245,8 +245,8 @@ export default defineComponent({
             alert(error instanceof Error ? error.message : String(error));
           });
       },
-      videoContainer$$q,
-      commentsContainer$$q,
+      v: videoContainer$$q,
+      c: commentsContainer$$q,
       onCommentsScroll$$q(event: UIEvent) {
         const target = event.target as HTMLDivElement;
         const isBottom =
@@ -268,7 +268,7 @@ export default defineComponent({
         <div class="m-4 flex-grow flex flex-col">
           <div
             class="flex aspect-w-16 aspect-h-9 bg-gray-900"
-            ref="videoContainer$$q"
+            ref="v"
           >
             <template v-if="started$$q && (!finished$$q || hash$$q)">
               <live-video
@@ -342,7 +342,7 @@ export default defineComponent({
         <div class="m-4 flex-grow-0 w-96 flex flex-col">
           <div
             class="bg-white w-full flex-grow flex-shrink overflow-y-auto"
-            ref="commentsContainer$$q"
+            ref="c"
             @scroll="onCommentsScroll$$q"
           >
             <comment-view
@@ -360,14 +360,14 @@ export default defineComponent({
                 <div class="relative">
                   <textarea
                     class="block w-full overflow-auto whitespace-normal break-all bg-transparent outline-none"
-                    ref="textArea$$q"
+                    ref="t"
                     placeholder="コメントを入力……"
                     v-model="newComment$$q"
                     @keyup.ctrl.enter.stop="postComment$$q"
                   />
                   <div
                     class="absolute top-0 left-0 w-full flex justify-center items-center bg-white bg-opacity-90"
-                    ref="textAreaSpinner$$q"
+                    ref="s"
                     v-show="newCommentPosting$$q"
                   >
                     <svg

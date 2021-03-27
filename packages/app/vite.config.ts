@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
                         /** NodeTypes.ATTRIBUTE */
                         case 6: {
                           switch (_prop.name) {
-                            case 'class':
+                            case 'class': {
                               // sort classes
                               const prop = _prop as AttributeNode;
                               const value = prop.value!;
@@ -65,6 +65,7 @@ export default defineConfig(({ mode }) => {
                                 .sort()
                                 .join(' ');
                               break;
+                            }
                           }
                           break;
                         }
