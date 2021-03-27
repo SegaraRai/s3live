@@ -152,8 +152,8 @@ export default defineComponent({
     //
 
     const newCommentPosting$$q = ref(false);
-    const textArea$$q = ref<HTMLTextAreaElement | undefined>();
-    const textAreaSpinner$$q = ref<HTMLDivElement | undefined>();
+    const elTextArea$$q = ref<HTMLTextAreaElement | undefined>();
+    const elTextAreaSpinner$$q = ref<HTMLDivElement | undefined>();
     const newComment$$q = ref('');
     const newCommentOk$$q = computed(
       () =>
@@ -171,11 +171,11 @@ export default defineComponent({
         newComment$$q.value = trimmedComment;
       }
 
-      if (textArea$$q.value && textAreaSpinner$$q.value) {
-        textArea$$q.value.style.height = 'auto';
-        const height = `${textArea$$q.value.scrollHeight}px`;
-        textArea$$q.value.style.height = height;
-        textAreaSpinner$$q.value.style.height = height;
+      if (elTextArea$$q.value && elTextAreaSpinner$$q.value) {
+        elTextArea$$q.value.style.height = 'auto';
+        const height = `${elTextArea$$q.value.scrollHeight}px`;
+        elTextArea$$q.value.style.height = height;
+        elTextAreaSpinner$$q.value.style.height = height;
       }
     };
     watch(newComment$$q, resizeTextArea);
@@ -183,12 +183,12 @@ export default defineComponent({
 
     //
 
-    const videoContainer$$q = ref<HTMLDivElement | undefined>();
-    const commentsContainer$$q = ref<HTMLDivElement | undefined>();
+    const elVideoContainer$$q = ref<HTMLDivElement | undefined>();
+    const elCommentsContainer$$q = ref<HTMLDivElement | undefined>();
     const resizeComments = () => {
-      if (videoContainer$$q.value && commentsContainer$$q.value) {
-        console.log(videoContainer$$q.value);
-        commentsContainer$$q.value.style.maxHeight = `${videoContainer$$q.value.scrollHeight}px`;
+      if (elVideoContainer$$q.value && elCommentsContainer$$q.value) {
+        console.log(elVideoContainer$$q.value);
+        elCommentsContainer$$q.value.style.maxHeight = `${elVideoContainer$$q.value.scrollHeight}px`;
       }
     };
     watch(loading$$q, () => {
@@ -200,9 +200,9 @@ export default defineComponent({
     const commentsAutoScrollEnabled$$q = ref(true);
     const autoScroll$$q = () => {
       nextTick(() => {
-        if (commentsAutoScrollEnabled$$q.value && commentsContainer$$q.value) {
-          commentsContainer$$q.value.scrollTop =
-            commentsContainer$$q.value.scrollHeight;
+        if (commentsAutoScrollEnabled$$q.value && elCommentsContainer$$q.value) {
+          elCommentsContainer$$q.value.scrollTop =
+            elCommentsContainer$$q.value.scrollHeight;
         }
       });
     };
@@ -224,8 +224,8 @@ export default defineComponent({
       },
       userId$$q,
       maxCommentLength$$q: maxCommentLength,
-      t: textArea$$q,
-      s: textAreaSpinner$$q,
+      elTextArea$$q,
+      elTextAreaSpinner$$q,
       newComment$$q,
       newCommentPosting$$q,
       newCommentOk$$q,
@@ -245,8 +245,8 @@ export default defineComponent({
             alert(error instanceof Error ? error.message : String(error));
           });
       },
-      v: videoContainer$$q,
-      c: commentsContainer$$q,
+      elVideoContainer$$q,
+      elCommentsContainer$$q,
       onCommentsScroll$$q(event: UIEvent) {
         const target = event.target as HTMLDivElement;
         const isBottom =
@@ -268,7 +268,7 @@ export default defineComponent({
         <div class="m-4 flex-grow flex flex-col">
           <div
             class="flex aspect-w-16 aspect-h-9 bg-gray-900"
-            ref="v"
+            ref="elVideoContainer$$q"
           >
             <template v-if="started$$q && (!finished$$q || hash$$q)">
               <live-video
@@ -342,7 +342,7 @@ export default defineComponent({
         <div class="m-4 flex-grow-0 w-96 flex flex-col">
           <div
             class="bg-white w-full flex-grow flex-shrink overflow-y-auto"
-            ref="c"
+            ref="elCommentsContainer$$q"
             @scroll="onCommentsScroll$$q"
           >
             <comment-view
@@ -360,14 +360,14 @@ export default defineComponent({
                 <div class="relative">
                   <textarea
                     class="block w-full overflow-auto whitespace-normal break-all bg-transparent outline-none"
-                    ref="t"
+                    ref="elTextArea$$q"
                     placeholder="コメントを入力……"
                     v-model="newComment$$q"
                     @keyup.ctrl.enter.stop="postComment$$q"
                   />
                   <div
                     class="absolute top-0 left-0 w-full flex justify-center items-center bg-white bg-opacity-90"
-                    ref="s"
+                    ref="elTextAreaSpinner$$q"
                     v-show="newCommentPosting$$q"
                   >
                     <svg

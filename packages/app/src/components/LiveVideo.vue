@@ -16,7 +16,7 @@ export default defineComponent({
     hash: String,
   },
   setup(props, { emit }) {
-    const videoElement = ref<HTMLVideoElement | null>(null);
+    const elVideo$$q = ref<HTMLVideoElement | null>(null);
     const isLive = computed(() => !props.hash);
     const src = computed(() =>
       isLive.value
@@ -35,7 +35,7 @@ export default defineComponent({
     let hls: Hls | undefined;
 
     onMounted(() => {
-      const video = videoElement.value!;
+      const video = elVideo$$q.value!;
       const videoSrc = src.value;
 
       let isSupported = false;
@@ -97,7 +97,7 @@ export default defineComponent({
     });
 
     return {
-      v: videoElement,
+      elVideo$$q,
       play$$q,
       ready$$q,
       showControls$$q,
@@ -109,7 +109,7 @@ export default defineComponent({
 
 <template>
   <div v-show="ready$$q">
-    <video ref="v" class="w-full h-full" :controls="showControls$$q"></video>
+    <video ref="elVideo$$q" class="w-full h-full" :controls="showControls$$q"></video>
     <template v-if="showOverlay$$q">
       <div
         class="absolute left-0 top-0 w-full h-full flex items-center justify-center bg-white bg-opacity-25"

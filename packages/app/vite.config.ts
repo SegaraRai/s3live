@@ -3,8 +3,43 @@ import { AttributeNode, TemplateNode, TextNode } from '@vue/compiler-core';
 import camelCase from 'lodash.camelcase';
 import { defineConfig } from 'vite';
 
+function createReservedMangleProps(): Record<string, string> {
+  // reserve prop names which starts with '$' or '_'
+  const chars = [
+    ...'$_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+    '',
+  ];
+  const entries: [string, string][] = [];
+  for (const c0 of '$_') {
+    for (const c1 of chars) {
+      for (const c2 of chars) {
+        for (const c3 of chars) {
+          const name = `${c0}${c1}${c2}${c3}`;
+          entries.push([`$${name}`, name]);
+        }
+      }
+    }
+  }
+  return Object.fromEntries(entries);
+}
+
 export default defineConfig(({ mode }) => {
+  let refCounter = 10;
   const cssModuleNmeMap = new Map<string, string>();
+  const nameCache = {
+    /*
+    vars: {
+      props: {},
+    },
+    //*/
+    props: {
+      props: {
+        $__cssModules: 'Zc',
+        $$style: 'Zs',
+        ...createReservedMangleProps(),
+      },
+    },
+  };
   return {
     build: {
       terserOptions: {
@@ -13,6 +48,7 @@ export default defineConfig(({ mode }) => {
             regex: /\$\$[qQ]$|^__cssModules$|^\$style$/,
           },
         },
+        nameCache,
       },
     },
     css: {
@@ -64,6 +100,24 @@ export default defineConfig(({ mode }) => {
                                 .split(/\s+/)
                                 .sort()
                                 .join(' ');
+                              break;
+                            }
+
+                            case 'ref': {
+                              // mangle refs
+                              const prop = _prop as AttributeNode;
+                              const value = prop.value!;
+                              if (/\$\$[qQ]$/.test(value.content)) {
+                                if (
+                                  !nameCache.props.props[`$${value.content}`]
+                                ) {
+                                  nameCache.props.props[
+                                    `$${value.content}`
+                                  ] = `Y${(refCounter++).toString(36)}`;
+                                }
+                                value.content =
+                                  nameCache.props.props[`$${value.content}`];
+                              }
                               break;
                             }
                           }
