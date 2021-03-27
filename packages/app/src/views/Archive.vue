@@ -9,10 +9,10 @@ export default defineComponent({
   },
   setup() {
     const liveId$$q = computed(
-      () => router.currentRoute.value.params.liveIdAndHash.split('-')[0]
+      () => router.currentRoute.value.params.liveIdAndHash.split('_')[0]
     );
     const hash$$q = computed(
-      () => router.currentRoute.value.params.liveIdAndHash.split('-')[1]
+      () => router.currentRoute.value.params.liveIdAndHash.split('_')[1]
     );
 
     return {

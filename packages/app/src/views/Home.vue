@@ -77,7 +77,7 @@ export default defineComponent({
                 <div
                   class="text-sm font-medium text-gray-700 dark:text-gray-400 transition-colors"
                 >
-                  認証キー
+                  パスワード
                 </div>
                 <input
                   v-model="newLiveKey$$q"

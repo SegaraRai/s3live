@@ -1,12 +1,17 @@
 import { VercelRequest } from '@vercel/node';
 import { Response } from 'node-fetch';
 import { authLiveId } from '../../../lib/auth';
+import { getPusherLiveKey, pusherStartEvent } from '../../../lib/commonConfig';
 import { checkCSRF } from '../../../lib/csrf';
 import { HTTPError } from '../../../lib/error';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
 import { fetchLiveInfo, updateLiveInfo } from '../../../lib/live';
-import { createPreflightAPIResponse, createVoidAPIResponse } from '../../../lib/response';
+import pusher from '../../../lib/pusher';
+import {
+  createPreflightAPIResponse,
+  createVoidAPIResponse,
+} from '../../../lib/response';
 
 export default createHandler(
   async (req: VercelRequest): Promise<Response> => {
@@ -40,6 +45,8 @@ export default createHandler(
       ...data,
       startedAt: Date.now(),
     });
+
+    await pusher.trigger(getPusherLiveKey(liveId), pusherStartEvent, null);
 
     return createVoidAPIResponse();
   }

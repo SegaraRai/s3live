@@ -1,16 +1,23 @@
 <script lang="ts">
+import { Channel } from 'pusher-js';
 import {
   computed,
   defineComponent,
   nextTick,
-  onMounted,
+  onBeforeUnmount,
   ref,
   watch,
 } from 'vue';
 import { fetchLive } from '../lib/api';
 import { postComment } from '../lib/authAPI';
-import { maxCommentLength } from '../lib/commonConfig';
+import {
+  getPusherLiveKey,
+  maxCommentLength,
+  pusherFinishEvent,
+  pusherPlaylistEvent,
+} from '../lib/commonConfig';
 import type { Comment } from '../lib/commonTypes';
+import pusher from '../lib/pusher';
 import { fetchUserId } from '../lib/userAccount';
 import CommentView from './CommentView.vue';
 import CounterUpdater from './CounterUpdater.vue';
@@ -29,22 +36,31 @@ export default defineComponent({
     hash: String,
   },
   setup(props) {
+    let channel: Channel | undefined;
+    let listeningLiveId: string | undefined;
+
+    //
+
+    const userId$$q = ref('');
+    fetchUserId().then((userId) => {
+      userId$$q.value = userId;
+    });
+
+    //
+
+    const liveId$$q = computed(() => props.liveId);
+    const hash$$q = computed(() => props.hash);
+
     const reloadCounter$$q = ref(0);
     const error$$q = ref<string | undefined>(undefined);
     const loading$$q = ref(true);
+    const humanizedCreatedAt$$q = ref('');
     const started$$q = ref(false);
     const finished$$q = ref(false);
     const title$$q = ref('');
     const ownerId$$q = ref('');
     const comments$$q = ref<Comment[]>([]);
     const viewerCount$$q = ref(0);
-    const liveId$$q = computed(() => props.liveId);
-    const hash$$q = computed(() => props.hash);
-
-    const userId$$q = ref('');
-    fetchUserId().then((userId) => {
-      userId$$q.value = userId;
-    });
 
     watch(
       [liveId$$q, reloadCounter$$q],
@@ -65,6 +81,9 @@ export default defineComponent({
           loading$$q.value = false;
 
           title$$q.value = liveInfo.live.title;
+          humanizedCreatedAt$$q.value = new Date(
+            liveInfo.live.createdAt
+          ).toLocaleString();
           started$$q.value = !!liveInfo.live.startedAt;
           finished$$q.value = !!liveInfo.live.finishedAt;
           ownerId$$q.value = liveInfo.live.userId;
@@ -75,6 +94,7 @@ export default defineComponent({
           loading$$q.value = false;
 
           title$$q.value = '';
+          humanizedCreatedAt$$q.value = '';
           started$$q.value = false;
           finished$$q.value = false;
           ownerId$$q.value = '';
@@ -86,6 +106,51 @@ export default defineComponent({
         immediate: true,
       }
     );
+
+    //
+
+    const cleanupChannel = () => {
+      if (channel) {
+        channel.unbind(pusherFinishEvent);
+        channel.unbind(pusherPlaylistEvent);
+        channel.unsubscribe();
+        channel = undefined;
+      }
+    };
+    watch(liveId$$q, (currentLiveId, oldLiveId) => {
+      if (currentLiveId === oldLiveId) {
+        return;
+      }
+
+      cleanupChannel();
+
+      if (currentLiveId) {
+        channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
+        channel.bind(pusherFinishEvent, () => {
+          if (liveId$$q.value !== currentLiveId) {
+            return;
+          }
+          if (loading$$q.value) {
+            return;
+          }
+          if (!finished$$q.value) {
+            reloadCounter$$q.value++;
+          }
+        });
+        channel.bind(pusherPlaylistEvent, () => {
+          if (liveId$$q.value !== currentLiveId) {
+            return;
+          }
+          if (loading$$q.value) {
+            return;
+          }
+          if (!started$$q.value) {
+            reloadCounter$$q.value++;
+          }
+        });
+      }
+    });
+    onBeforeUnmount(cleanupChannel);
 
     //
 
@@ -151,6 +216,7 @@ export default defineComponent({
       error$$q,
       loading$$q,
       title$$q,
+      humanizedCreatedAt$$q,
       started$$q,
       finished$$q,
       ownerId$$q,
@@ -258,9 +324,12 @@ export default defineComponent({
               {{ title$$q }}
             </div>
           </div>
-          <template v-if="!finished$$q">
-            <div>
-              <div>
+          <div class="font-medium text-gray-700">
+            <div class="inline-block">
+              {{ humanizedCreatedAt$$q }}
+            </div>
+            <template v-if="!finished$$q">
+              <div class="inline-block ml-4">
                 視聴中
                 <counter-view
                   :live-id="liveId$$q"
@@ -269,8 +338,9 @@ export default defineComponent({
                 />
                 人
               </div>
-            </div>
-          </template>
+              <counter-updater :liveId="liveId$$q" hidden />
+            </template>
+          </div>
         </div>
         <div class="m-4 flex-grow-0 w-96 flex flex-col">
           <div
@@ -328,7 +398,13 @@ export default defineComponent({
                 </div>
               </div>
               <div class="flex mt-2">
-                <div class="flex-grow"></div>
+                <div class="flex-grow">
+                  <template v-if="ownerId$$q === userId$$q">
+                    <div class="text-green-600 font-bold">
+                      あなたが配信者です
+                    </div>
+                  </template>
+                </div>
                 <div class="mx-3">
                   <span
                     :class="
@@ -354,10 +430,6 @@ export default defineComponent({
           </template>
         </div>
       </div>
-      <counter-updater :liveId="liveId$$q" hidden />
-      <template v-if="!loading$$q && !error$$q && finished$$q && !hash$$q">
-        <div>この配信は終了しました</div>
-      </template>
     </template>
     <template v-if="error$$q">
       <p class="mt-8 text-xl text-red-500">{{ error$$q }}</p>

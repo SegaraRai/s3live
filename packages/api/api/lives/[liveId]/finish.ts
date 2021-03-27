@@ -4,7 +4,9 @@ import { POSTFinishRequest, POSTFinishResponse } from '../../../lib/apiTypes';
 import { authLiveId } from '../../../lib/auth';
 import {
   archivePlaylistCacheControl,
+  getPusherLiveKey,
   playlistContentType,
+  pusherFinishEvent,
 } from '../../../lib/commonConfig';
 import { checkCSRF } from '../../../lib/csrf';
 import { HTTPError } from '../../../lib/error';
@@ -17,7 +19,11 @@ import { gzipAsync } from '../../../lib/gzip';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
 import { fetchLiveInfo, updateLiveInfo } from '../../../lib/live';
-import { createAPIResponse, createPreflightAPIResponse } from '../../../lib/response';
+import pusher from '../../../lib/pusher';
+import {
+  createAPIResponse,
+  createPreflightAPIResponse,
+} from '../../../lib/response';
 import s3 from '../../../lib/s3';
 import { validate } from '../../../lib/validate';
 
@@ -101,6 +107,8 @@ ${generateFragmentFilename(userId, liveId, index)}
       ...data,
       finishedAt: Date.now(),
     });
+
+    await pusher.trigger(getPusherLiveKey(liveId), pusherFinishEvent, null);
 
     return createAPIResponse<POSTFinishResponse>({
       playlistKey,

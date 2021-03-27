@@ -18,10 +18,13 @@ export const viewerCountUpdate = viewerCountExpiry - 10;
 export const viewerCountViewUpdate = 30;
 
 export function getPusherLiveKey(liveId: string): string {
-  return `l-${liveId}`;
+  return `l_${liveId}`;
 }
 
 export const pusherCommentEvent = 'c';
 export const pusherViewerCountEvent = 'v';
+export const pusherPlaylistEvent = 'p';
+export const pusherStartEvent = 's';
+export const pusherFinishEvent = 'f';
 
 export const fragmentsPerPlaylist = 3;

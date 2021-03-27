@@ -30,7 +30,7 @@ export default defineComponent({
         clearInterval(timer);
         timer = undefined;
       }
-      if (oldLiveId && channel) {
+      if (channel) {
         channel.unbind(pusherViewerCountEvent);
         channel.unsubscribe();
         channel = undefined;
@@ -71,10 +71,6 @@ export default defineComponent({
 
     onBeforeUnmount(() => {
       liveId.value = undefined;
-      if (timer != null) {
-        clearInterval(timer);
-        timer = undefined;
-      }
     });
 
     return {

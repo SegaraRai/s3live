@@ -4,8 +4,10 @@ import type { POSTPlaylistRequest } from '../../../lib/apiTypes';
 import { authLiveId } from '../../../lib/auth';
 import {
   fragmentsPerPlaylist,
+  getPusherLiveKey,
   playlistCacheControl,
   playlistContentType,
+  pusherPlaylistEvent,
 } from '../../../lib/commonConfig';
 import { checkCSRF } from '../../../lib/csrf';
 import { HTTPError } from '../../../lib/error';
@@ -13,6 +15,7 @@ import { generateFragmentPathname } from '../../../lib/fragment';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
 import { fetchLivePlaylist, updateLivePlaylist } from '../../../lib/live';
+import pusher from '../../../lib/pusher';
 import {
   createPreflightAPIResponse,
   createVoidAPIResponse,
@@ -96,8 +99,9 @@ ${process.env.FRAGMENT_BASE_URI}/${generateFragmentPathname(
         fragmentDurations: body.fragmentDurations,
       };
 
-      // TODO: pusher?
       await updateLivePlaylist(liveId, playlist);
+
+      await pusher.trigger(getPusherLiveKey(liveId), pusherPlaylistEvent, null);
 
       return createVoidAPIResponse();
     }

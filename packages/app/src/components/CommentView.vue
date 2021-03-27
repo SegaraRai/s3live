@@ -49,7 +49,7 @@ export default defineComponent({
       if (currentLiveId === oldLiveId) {
         return;
       }
-      if (oldLiveId && channel) {
+      if (channel) {
         channel.unbind(pusherCommentEvent);
         channel.unsubscribe();
         channel = undefined;
