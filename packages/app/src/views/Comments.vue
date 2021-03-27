@@ -64,7 +64,7 @@ export default defineComponent({
 <template>
   <div>
     <template v-if="ownerId$$q">
-      <div class="absolute pt-10 top-0 h-full">
+      <div class="absolute max-w-screen-2xl pt-10 top-0 h-full">
         <div class="h-full overflow-y-auto" ref="elCommentsContainer$$q">
           <comment-view
             :class="$style.comments$$q"

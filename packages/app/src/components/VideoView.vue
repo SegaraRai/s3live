@@ -184,11 +184,14 @@ export default defineComponent({
 
     //
 
+    const elRoot$$q = ref<HTMLDivElement | undefined>();
     const elVideoContainer$$q = ref<HTMLDivElement | undefined>();
-    const elCommentsContainer$$q = ref<HTMLDivElement | undefined>();
     const resizeComments = () => {
-      if (elVideoContainer$$q.value && elCommentsContainer$$q.value) {
-        elCommentsContainer$$q.value.style.maxHeight = `${elVideoContainer$$q.value.scrollHeight}px`;
+      if (elVideoContainer$$q.value && elRoot$$q.value) {
+        elRoot$$q.value.style.setProperty(
+          '--container-size',
+          `${elVideoContainer$$q.value.scrollHeight}px`
+        );
       }
     };
     watch(loading$$q, () => {
@@ -201,6 +204,7 @@ export default defineComponent({
 
     //
 
+    const elCommentsContainer$$q = ref<HTMLDivElement | undefined>();
     const commentsAutoScrollEnabled$$q = ref(true);
     const autoScroll$$q = () => {
       nextTick(() => {
@@ -253,6 +257,7 @@ export default defineComponent({
             alert(error instanceof Error ? error.message : String(error));
           });
       },
+      elRoot$$q,
       elVideoContainer$$q,
       elCommentsContainer$$q,
       onCommentsScroll$$q(event: UIEvent) {
@@ -269,9 +274,9 @@ export default defineComponent({
 </script>
 
 <template>
-  <div>
+  <div ref="elRoot$$q">
     <template v-if="!loading$$q && !error$$q">
-      <div class="flex w-full">
+      <div class="flex w-full flex-col xl:flex-row">
         <div class="m-4 flex-grow flex flex-col">
           <div
             class="flex aspect-w-16 aspect-h-9 bg-gray-900"
@@ -284,30 +289,6 @@ export default defineComponent({
                 @ready="loading$$q = false"
                 @error="error$$q = $event.target.value"
               />
-              <div
-                class="absolute left-0 top-0 w-full h-full flex items-center justify-center bg-white bg-opacity-25 text-blue-400"
-              >
-                <svg
-                  class="animate-spin w-32 h-32"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              </div>
             </template>
             <template v-else>
               <div class="flex w-full h-full items-center justify-center">
@@ -345,9 +326,10 @@ export default defineComponent({
             </template>
           </div>
         </div>
-        <div class="m-4 flex-grow-0 w-96 flex flex-col">
+        <div class="m-4 flex-grow-0 xl:w-96 flex flex-col">
           <div
-            class="bg-white w-full flex-grow flex-shrink overflow-y-auto"
+            class="bg-white w-full flex-grow flex-shrink overflow-y-auto h-64 xl:h-auto"
+            :class="$style.commentsContainer$$q"
             ref="elCommentsContainer$$q"
             @scroll="onCommentsScroll$$q"
           >
@@ -472,5 +454,11 @@ export default defineComponent({
   @apply font-semibold;
   @apply font-mono;
   @apply tabular-nums;
+}
+
+@screen xl {
+  .comments-container {
+    max-height: var(--container-size);
+  }
 }
 </style>

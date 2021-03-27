@@ -128,9 +128,7 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
           .join(', ')})`
       );
     } catch (error) {
-      process.stderr.write(
-        `[ERROR] failed to upload playlist \n${error}`
-      );
+      process.stderr.write(`[ERROR] failed to upload playlist \n${error}`);
     }
   };
 
@@ -167,7 +165,10 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
 
       started = true;
 
-      const playlistContent = await readFile(join(streamDir, playlistFilename), 'utf-8');
+      const playlistContent = await readFile(
+        join(streamDir, playlistFilename),
+        'utf-8'
+      );
 
       // list .ts files in ascending order
       const fragmentFilenames = files
@@ -175,6 +176,12 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
         .filter((item) => item[1])
         .sort((a, b) => parseInt(a[1]![1], 10) - parseInt(b[1]![1], 10))
         .map((item) => item[0]);
+
+      for (const filename of fragmentFilenames) {
+        if (!filenameToIndex.has(filename)) {
+          filenameToIndex.set(filename, ++lastFragmentIndex);
+        }
+      }
 
       // exclude latest (currently processing) .ts file if streaming not finished
       if (!finished) {
@@ -184,12 +191,6 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
       if (fragmentFilenames.length === 0) {
         // nothing changed
         continue;
-      }
-
-      for (const filename of fragmentFilenames) {
-        if (!filenameToIndex.has(filename)) {
-          filenameToIndex.set(filename, ++lastFragmentIndex);
-        }
       }
 
       // upload and delete fragments
