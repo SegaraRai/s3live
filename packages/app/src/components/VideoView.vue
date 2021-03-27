@@ -114,40 +114,48 @@ export default defineComponent({
         channel = undefined;
       }
     };
-    watch(liveId$$q, (currentLiveId, oldLiveId) => {
-      if (currentLiveId === oldLiveId) {
-        return;
-      }
+    watch(
+      liveId$$q,
+      (currentLiveId, oldLiveId) => {
+        if (channel && currentLiveId === oldLiveId) {
+          return;
+        }
 
-      cleanupChannel();
+        cleanupChannel();
 
-      if (currentLiveId) {
-        channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
-        channel.bind(pusherFinishEvent, () => {
-          if (liveId$$q.value !== currentLiveId) {
-            return;
-          }
-          if (loading$$q.value) {
-            return;
-          }
-          if (!finished$$q.value) {
-            reloadCounter$$q.value++;
-          }
-        });
-        // we use `pusherPlaylistEvent` since the playlist is not yet uploaded at `pusherStartEvent`
-        channel.bind(pusherPlaylistEvent, () => {
-          if (liveId$$q.value !== currentLiveId) {
-            return;
-          }
-          if (loading$$q.value) {
-            return;
-          }
-          if (!started$$q.value) {
-            reloadCounter$$q.value++;
-          }
-        });
+        if (currentLiveId) {
+          channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
+          channel.bind(pusherFinishEvent, () => {
+            if (liveId$$q.value !== currentLiveId) {
+              return;
+            }
+            if (loading$$q.value) {
+              return;
+            }
+            if (!finished$$q.value) {
+              reloadCounter$$q.value++;
+            }
+            channel.unbind(pusherFinishEvent);
+          });
+          // we use `pusherPlaylistEvent` since the playlist is not yet uploaded at `pusherStartEvent`
+          channel.bind(pusherPlaylistEvent, () => {
+            if (liveId$$q.value !== currentLiveId) {
+              return;
+            }
+            if (loading$$q.value) {
+              return;
+            }
+            if (!started$$q.value) {
+              reloadCounter$$q.value++;
+            }
+            channel.unbind(pusherPlaylistEvent);
+          });
+        }
+      },
+      {
+        immediate: true,
       }
-    });
+    );
     onBeforeUnmount(cleanupChannel);
 
     //

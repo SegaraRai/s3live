@@ -7,7 +7,7 @@ import {
   ref,
 } from 'vue';
 import Hls from 'hls.js';
-import { CustomFLoader } from '../lib/CustomFLoader';
+//import { CustomFLoader } from '../lib/CustomFLoader';
 //import { CustomPLoader } from '../lib/CustomPLoader';
 
 export default defineComponent({
@@ -43,7 +43,8 @@ export default defineComponent({
       if (Hls.isSupported()) {
         isSupported = true;
         hls = new Hls({
-          fLoader: CustomFLoader,
+          enableWorker: import.meta.env === 'production',
+          //fLoader: CustomFLoader,
           //pLoader: CustomPLoader,
         });
         hls.on('hlsError', (event, data) => {

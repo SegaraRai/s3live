@@ -9,6 +9,7 @@ import {
   uploadLivePlaylist,
 } from './api';
 import {
+  finishTimeout,
   fragmentCacheControl,
   fragmentContentType,
   fragmentsPerPlaylist,
@@ -33,31 +34,36 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
   });
 
   let lastFragmentIndex = -1;
+  let lastAvailableFragmentIndex = -1;
 
   const uploadFragment = async (
     filename: string,
     index: number
   ): Promise<void> => {
     try {
+      const ts1 = Date.now();
       const filepath = join(streamDir, filename);
       const content = await readFile(filepath);
-      const response = await fetch(
-        await fetchLiveFragmentURL(liveId, token, index),
-        {
-          method: 'PUT',
-          headers: [
-            ['Cache-Control', fragmentCacheControl],
-            ['Content-Type', fragmentContentType],
-          ],
-          body: content,
-        }
-      );
+      const url = await fetchLiveFragmentURL(liveId, token, index);
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: [
+          ['Cache-Control', fragmentCacheControl],
+          ['Content-Type', fragmentContentType],
+        ],
+        body: content,
+      });
       if (!response.ok) {
         throw new Error('failed to upload fragment');
       }
       await unlink(filepath);
+      const ts2 = Date.now();
 
-      console.log(`[F] uploaded ${filepath}`);
+      console.log(
+        `[F] uploaded ${filepath} (${Math.ceil(content.length / 1024)} KiB) (${
+          ts2 - ts1
+        }ms)`
+      );
     } catch (error) {
       process.stderr.write(
         `[ERROR] failed to upload fragment ${filename}\n${error}`
@@ -67,6 +73,7 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
 
   const uploadPlaylist = async (content: string): Promise<void> => {
     try {
+      const ts1 = Date.now();
       let targetDuration: number | undefined;
       const indices: number[] = [];
       let nextDuration: number | undefined;
@@ -99,11 +106,15 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
       }
 
       const firstIndex = Math.max(
-        lastFragmentIndex - fragmentsPerPlaylist + 1,
+        lastAvailableFragmentIndex - fragmentsPerPlaylist + 1,
         0
       );
       const fragmentDurations: number[] = [];
-      for (let index = firstIndex; index <= lastFragmentIndex; index++) {
+      for (
+        let index = firstIndex;
+        index <= lastAvailableFragmentIndex;
+        index++
+      ) {
         const duration = indexToDuration[index];
         if (!duration) {
           throw new Error(`duration of ${index} not registered`);
@@ -121,8 +132,10 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
         targetDuration,
       });
 
+      const ts2 = Date.now();
+
       console.log(
-        `[P] uploaded (${content
+        `[P] uploaded (${ts2 - ts1}ms) (${content
           .split('\n')
           .filter((x) => x && !x.startsWith('#'))
           .join(', ')})`
@@ -144,11 +157,19 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
   // watch loop
   let started = false;
   let finished = false;
+  let emptyChecked = false;
+  let lastProcTimestamp = Date.now();
   while (!finished) {
     await sleep(poolInterval);
 
     try {
       const files = await readdir(streamDir);
+      if (files.length && !emptyChecked) {
+        console.error('directory is not empty');
+        return;
+      }
+
+      emptyChecked = true;
 
       if (!files.includes(playlistFilename)) {
         if (!started) {
@@ -158,20 +179,18 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
         finished = true;
       }
 
-      if (!started) {
-        // start live
-        //await startLive(liveId, token);
+      if (started && Date.now() - lastProcTimestamp > finishTimeout * 1000) {
+        finished = true;
       }
 
-      started = true;
-
-      const playlistContent = await readFile(
-        join(streamDir, playlistFilename),
-        'utf-8'
-      );
+      if (!started) {
+        // start live
+        started = true;
+        await startLive(liveId, token);
+      }
 
       // list .ts files in ascending order
-      const fragmentFilenames = files
+      let fragmentFilenames = files
         .map((filename) => [filename, filename.match(/(\d+)\.ts$/)] as const)
         .filter((item) => item[1])
         .sort((a, b) => parseInt(a[1]![1], 10) - parseInt(b[1]![1], 10))
@@ -192,6 +211,29 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
         // nothing changed
         continue;
       }
+
+      lastAvailableFragmentIndex = filenameToIndex.get(
+        fragmentFilenames[fragmentFilenames.length - 1]
+      )!;
+
+      const playlistContent = await readFile(
+        join(streamDir, playlistFilename),
+        'utf-8'
+      );
+
+      {
+        const playlistLines = playlistContent.split(/\r?\n/);
+        fragmentFilenames = fragmentFilenames.filter((filename) =>
+          playlistLines.includes(filename)
+        );
+      }
+
+      if (fragmentFilenames.length === 0) {
+        // nothing changed
+        continue;
+      }
+
+      lastProcTimestamp = Date.now();
 
       // upload and delete fragments
       await Promise.all(
@@ -225,9 +267,7 @@ async function proc(playlistFilepath: string, liveId: string, token: string) {
 
 async function main() {
   const [, , playlistFilepath, liveId, token] = process.argv;
-  while (true) {
-    await proc(playlistFilepath, liveId, token);
-  }
+  await proc(playlistFilepath, liveId, token);
 }
 
 main();
