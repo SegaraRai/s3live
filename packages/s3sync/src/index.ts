@@ -22,9 +22,7 @@ function sleep(time: number): Promise<void> {
   });
 }
 
-async function proc(liveId: string, token: string) {
-  const playlistFilepath = process.argv[2];
-
+async function proc(playlistFilepath: string, liveId: string, token: string) {
   const streamDir = dirname(playlistFilepath);
   const playlistFilename = basename(playlistFilepath);
 
@@ -219,9 +217,9 @@ async function proc(liveId: string, token: string) {
 }
 
 async function main() {
-  const [, , liveId, token] = process.argv;
+  const [, , playlistFilepath, liveId, token] = process.argv;
   while (true) {
-    await proc(liveId, token);
+    await proc(playlistFilepath, liveId, token);
   }
 }
 

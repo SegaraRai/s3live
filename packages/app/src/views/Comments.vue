@@ -1,5 +1,12 @@
 <script lang="ts">
-import { computed, defineComponent, ref, watch } from 'vue';
+import {
+  computed,
+  defineComponent,
+  nextTick,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import CommentView from '../components/CommentView.vue';
 import { fetchLive } from '../lib/api';
 import type { Comment } from '../lib/commonTypes';
@@ -32,10 +39,23 @@ export default defineComponent({
       }
     );
 
+    const elCommentsContainer$$q = ref<HTMLDivElement | undefined>();
+    const autoScroll$$q = () => {
+      nextTick(() => {
+        if (elCommentsContainer$$q.value) {
+          elCommentsContainer$$q.value.scrollTop =
+            elCommentsContainer$$q.value.scrollHeight;
+        }
+      });
+    };
+    onMounted(autoScroll$$q);
+
     return {
       liveId$$q,
       ownerId$$q,
       comments$$q,
+      elCommentsContainer$$q,
+      autoScroll$$q,
     };
   },
 });
@@ -44,13 +64,18 @@ export default defineComponent({
 <template>
   <div>
     <template v-if="ownerId$$q">
-      <comment-view
-        :class="$style.comments$$q"
-        :live-id="liveId$$q"
-        :owner-id="ownerId$$q"
-        :comments="comments$$q"
-        user-id=""
-      />
+      <div class="absolute pt-10 top-0 h-full">
+        <div class="h-full overflow-y-auto" ref="elCommentsContainer$$q">
+          <comment-view
+            :class="$style.comments$$q"
+            :live-id="liveId$$q"
+            :owner-id="ownerId$$q"
+            :comments="comments$$q"
+            user-id=""
+            @update="autoScroll$$q"
+          />
+        </div>
+      </div>
     </template>
   </div>
 </template>

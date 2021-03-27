@@ -5,6 +5,7 @@ import {
   defineComponent,
   nextTick,
   onBeforeUnmount,
+  onMounted,
   ref,
   watch,
 } from 'vue';
@@ -187,7 +188,6 @@ export default defineComponent({
     const elCommentsContainer$$q = ref<HTMLDivElement | undefined>();
     const resizeComments = () => {
       if (elVideoContainer$$q.value && elCommentsContainer$$q.value) {
-        console.log(elVideoContainer$$q.value);
         elCommentsContainer$$q.value.style.maxHeight = `${elVideoContainer$$q.value.scrollHeight}px`;
       }
     };
@@ -206,6 +206,7 @@ export default defineComponent({
         }
       });
     };
+    onMounted(autoScroll$$q);
 
     return {
       liveId$$q,
@@ -252,7 +253,6 @@ export default defineComponent({
         const isBottom =
           target.scrollTop + target.clientHeight === target.scrollHeight;
         commentsAutoScrollEnabled$$q.value = isBottom;
-        console.log(`commentsAutoScrollEnabled set to ${isBottom}`);
       },
       //
       autoScroll$$q,

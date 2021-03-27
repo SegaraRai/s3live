@@ -4,7 +4,7 @@ import camelCase from 'lodash.camelcase';
 import { defineConfig } from 'vite';
 
 function createReservedMangleProps(): Record<string, string> {
-  // reserve prop names which starts with '$' or '_'
+  // reserve prop names which start with '$' or '_'
   const chars = [
     ...'$_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
     '',
@@ -26,20 +26,23 @@ function createReservedMangleProps(): Record<string, string> {
 export default defineConfig(({ mode }) => {
   let refCounter = 10;
   const cssModuleNmeMap = new Map<string, string>();
-  const nameCache = {
-    /*
-    vars: {
-      props: {},
-    },
-    //*/
-    props: {
-      props: {
-        $__cssModules: 'Zc',
-        $$style: 'Zs',
-        ...createReservedMangleProps(),
-      },
-    },
-  };
+  const nameCache =
+    mode === 'production'
+      ? {
+          /*
+          vars: {
+            props: {},
+          },
+          //*/
+          props: {
+            props: {
+              $__cssModules: 'Zc',
+              $$style: 'Zs',
+              ...createReservedMangleProps(),
+            },
+          },
+        }
+      : null;
   return {
     build: {
       terserOptions: {
@@ -104,21 +107,23 @@ export default defineConfig(({ mode }) => {
                             }
 
                             case 'ref': {
-                              // mangle refs
-                              const prop = _prop as AttributeNode;
-                              const value = prop.value!;
-                              if (/\$\$[qQ]$/.test(value.content)) {
-                                if (
-                                  !nameCache.props.props[`$${value.content}`]
-                                ) {
-                                  nameCache.props.props[
-                                    `$${value.content}`
-                                  ] = `Y${(refCounter++).toString(36)}`;
+                              if (mode === 'production') {
+                                // mangle refs
+                                const prop = _prop as AttributeNode;
+                                const value = prop.value!;
+                                if (/\$\$[qQ]$/.test(value.content)) {
+                                  if (
+                                    !nameCache.props.props[`$${value.content}`]
+                                  ) {
+                                    nameCache.props.props[
+                                      `$${value.content}`
+                                    ] = `Y${(refCounter++).toString(36)}`;
+                                  }
+                                  value.content =
+                                    nameCache.props.props[`$${value.content}`];
                                 }
-                                value.content =
-                                  nameCache.props.props[`$${value.content}`];
+                                break;
                               }
-                              break;
                             }
                           }
                           break;
