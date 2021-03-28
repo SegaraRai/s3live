@@ -43,7 +43,9 @@ export default defineComponent({
     const showOverlay$$q = ref(true);
 
     //
-    const playlist$$q = ref('');
+    const playlistContainer: PlaylistContainer = {
+      playlist$$q: '',
+    };
 
     let channel: Channel | undefined;
     const cleanupChannel = () => {
@@ -61,17 +63,25 @@ export default defineComponent({
         }
 
         cleanupChannel();
-        playlist$$q.value = '';
+        playlistContainer.playlist$$q = '';
 
         if (currentLiveId) {
+          console.log('pbp', currentLiveId);
           channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
           channel.bind(
             pusherPlaylistEvent,
             (newPlaylist: PusherEventDataPlaylist) => {
+              console.log(
+                'pp',
+                liveId$$q.value,
+                currentLiveId,
+                newPlaylist,
+                playlistContainer
+              );
               if (liveId$$q.value !== currentLiveId) {
                 return;
               }
-              playlist$$q.value = newPlaylist;
+              playlistContainer.playlist$$q = newPlaylist;
             }
           );
         }
@@ -81,21 +91,6 @@ export default defineComponent({
       }
     );
     onBeforeUnmount(cleanupChannel);
-
-    //
-
-    const playlistContainer: PlaylistContainer = {
-      playlist$$q: '',
-    };
-    watch(
-      playlist$$q,
-      (currentPlaylist) => {
-        playlistContainer.playlist$$q = currentPlaylist;
-      },
-      {
-        immediate: true,
-      }
-    );
 
     //
 
