@@ -54,8 +54,7 @@ export default defineComponent({
     let channel: Channel | undefined;
     const cleanupChannel = () => {
       if (channel) {
-        console.log('pcp', liveId$$q.value);
-        //channel.unbind(pusherPlaylistEvent);
+        channel.unbind(pusherPlaylistEvent);
         channel.unsubscribe();
         channel = undefined;
       }
@@ -70,19 +69,11 @@ export default defineComponent({
         cleanupChannel();
         playlistContainer.playlist$$q = '';
 
-        console.log('pbp', currentLiveId);
         if (currentLiveId) {
           channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
           channel.bind(
             pusherPlaylistEvent,
             (newPlaylist: PusherEventDataPlaylist) => {
-              console.log(
-                'pp',
-                liveId$$q.value,
-                currentLiveId,
-                newPlaylist,
-                playlistContainer
-              );
               if (liveId$$q.value !== currentLiveId) {
                 return;
               }

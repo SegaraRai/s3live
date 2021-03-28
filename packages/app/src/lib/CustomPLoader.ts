@@ -20,7 +20,6 @@ export function createCustomPLoader(
       config: LoaderConfig,
       callbacks: LoaderCallbacks
     ): void {
-      console.log('rewrite', context.url, playlistContainer.playlist$$q);
       if (
         playlistContainer.playlist$$q &&
         (context.url.includes('.m3u8') || context.url.startsWith('data:'))

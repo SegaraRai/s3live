@@ -108,8 +108,8 @@ export default defineComponent({
     let channel: Channel | undefined;
     const cleanupChannel = () => {
       if (channel) {
-        //channel.unbind(pusherFinishEvent);
-        //channel.unbind(pusherPlaylistEvent);
+        channel.unbind(pusherFinishEvent);
+        channel.unbind(pusherPlaylistEvent);
         channel.unsubscribe();
         channel = undefined;
       }
@@ -125,7 +125,7 @@ export default defineComponent({
 
         if (currentLiveId) {
           channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
-          channel.bind(pusherFinishEvent, () => {
+          const finishCallback = () => {
             if (liveId$$q.value !== currentLiveId) {
               return;
             }
@@ -135,10 +135,11 @@ export default defineComponent({
             if (!finished$$q.value) {
               reloadCounter$$q.value++;
             }
-            //channel.unbind(pusherFinishEvent);
-          });
+            channel.unbind(pusherFinishEvent, finishCallback);
+          }
+          channel.bind(pusherFinishEvent, finishCallback);
           // we use `pusherPlaylistEvent` since the playlist is not yet uploaded at `pusherStartEvent`
-          channel.bind(pusherPlaylistEvent, () => {
+          const playlistCallback = () => {
             if (liveId$$q.value !== currentLiveId) {
               return;
             }
@@ -148,8 +149,9 @@ export default defineComponent({
             if (!started$$q.value) {
               reloadCounter$$q.value++;
             }
-            //channel.unbind(pusherPlaylistEvent);
-          });
+            channel.unbind(pusherPlaylistEvent, playlistCallback);
+          };
+          channel.bind(pusherPlaylistEvent, playlistCallback);
         }
       },
       {
