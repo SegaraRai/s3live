@@ -20,7 +20,10 @@ export function createCustomPLoader(
       config: LoaderConfig,
       callbacks: LoaderCallbacks
     ): void {
-      if (context.url.includes('.m3u8') && playlistContainer.playlist$$q) {
+      if (
+        playlistContainer.playlist$$q &&
+        (context.url.includes('.m3u8') || context.url.startsWith('data:'))
+      ) {
         context.url = `data:${playlistContentType},${encodeURIComponent(
           playlistContainer.playlist$$q
         )}`;
