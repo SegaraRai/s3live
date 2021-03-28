@@ -26,17 +26,21 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const elVideo$$q = ref<HTMLVideoElement | null>(null);
+
     const liveId$$q = computed(() => props.liveId);
-    const isLive$$q = computed(() => !props.hash);
+    const hash$$q = computed(() => props.hash);
+
+    const isLive$$q = computed(() => !hash$$q.value);
     const src$$q = computed(() =>
       isLive$$q.value
         ? `${import.meta.env.VITE_API_ENDPOINT}/lives/${
-            props.liveId
+            liveId$$q.value
           }/playlist.m3u8`
-        : `${import.meta.env.VITE_FRAGMENT_ENDPOINT}/${props.liveId}/playlist-${
-            props.hash
-          }.m3u8`
+        : `${import.meta.env.VITE_FRAGMENT_ENDPOINT}/${
+            liveId$$q.value
+          }/playlist-${hash$$q.value}.m3u8`
     );
+
     const play$$q = ref<() => void>(() => {});
     const ready$$q = ref(false);
     const showControls$$q = ref(false);
@@ -50,7 +54,8 @@ export default defineComponent({
     let channel: Channel | undefined;
     const cleanupChannel = () => {
       if (channel) {
-        channel.unbind(pusherPlaylistEvent);
+        console.log('pcp', liveId$$q.value);
+        //channel.unbind(pusherPlaylistEvent);
         channel.unsubscribe();
         channel = undefined;
       }
@@ -65,8 +70,8 @@ export default defineComponent({
         cleanupChannel();
         playlistContainer.playlist$$q = '';
 
+        console.log('pbp', currentLiveId);
         if (currentLiveId) {
-          console.log('pbp', currentLiveId);
           channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
           channel.bind(
             pusherPlaylistEvent,
