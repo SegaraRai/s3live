@@ -5,10 +5,19 @@ import {
   onBeforeUnmount,
   onMounted,
   ref,
+  watch,
 } from 'vue';
 import Hls from 'hls.js';
 //import { CustomFLoader } from '../lib/CustomFLoader';
-//import { CustomPLoader } from '../lib/CustomPLoader';
+import { PlaylistContainer, createCustomPLoader } from '../lib/CustomPLoader';
+import type { PusherEventDataPlaylist } from '../lib/apiTypes';
+import {
+  getPusherLiveKey,
+  playlistContentType,
+  pusherPlaylistEvent,
+} from '../lib/commonConfig';
+import pusher from '../lib/pusher';
+import { Channel } from 'pusher-js';
 
 export default defineComponent({
   props: {
@@ -17,9 +26,10 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const elVideo$$q = ref<HTMLVideoElement | null>(null);
-    const isLive = computed(() => !props.hash);
-    const src = computed(() =>
-      isLive.value
+    const liveId$$q = computed(() => props.liveId);
+    const isLive$$q = computed(() => !props.hash);
+    const src$$q = computed(() =>
+      isLive$$q.value
         ? `${import.meta.env.VITE_API_ENDPOINT}/lives/${
             props.liveId
           }/playlist.m3u8`
@@ -32,11 +42,68 @@ export default defineComponent({
     const showControls$$q = ref(false);
     const showOverlay$$q = ref(true);
 
+    //
+    const playlist$$q = ref('');
+
+    let channel: Channel | undefined;
+    const cleanupChannel = () => {
+      if (channel) {
+        channel.unbind(pusherPlaylistEvent);
+        channel.unsubscribe();
+        channel = undefined;
+      }
+    };
+    watch(
+      liveId$$q,
+      (currentLiveId, oldLiveId) => {
+        if (channel && currentLiveId === oldLiveId) {
+          return;
+        }
+
+        cleanupChannel();
+        playlist$$q.value = '';
+
+        if (currentLiveId) {
+          channel = pusher.subscribe(getPusherLiveKey(currentLiveId));
+          channel.bind(
+            pusherPlaylistEvent,
+            (newPlaylist: PusherEventDataPlaylist) => {
+              if (liveId$$q.value !== currentLiveId) {
+                return;
+              }
+              playlist$$q.value = newPlaylist;
+            }
+          );
+        }
+      },
+      {
+        immediate: true,
+      }
+    );
+    onBeforeUnmount(cleanupChannel);
+
+    //
+
+    const playlistContainer: PlaylistContainer = {
+      playlist$$q: '',
+    };
+    watch(
+      playlist$$q,
+      (currentPlaylist) => {
+        playlistContainer.playlist$$q = currentPlaylist;
+      },
+      {
+        immediate: true,
+      }
+    );
+
+    //
+
     let hls: Hls | undefined;
 
     onMounted(() => {
       const video = elVideo$$q.value!;
-      const videoSrc = src.value;
+      const videoSrc = src$$q.value;
 
       let isSupported = false;
 
@@ -45,7 +112,7 @@ export default defineComponent({
         hls = new Hls({
           enableWorker: import.meta.env === 'production',
           //fLoader: CustomFLoader,
-          //pLoader: CustomPLoader,
+          pLoader: createCustomPLoader(playlistContainer),
         });
         hls.on('hlsError', (event, data) => {
           if (
@@ -58,7 +125,7 @@ export default defineComponent({
         });
         hls.loadSource(videoSrc);
         hls.attachMedia(video);
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      } else if (video.canPlayType(playlistContentType)) {
         isSupported = true;
         video.src = videoSrc;
       }
@@ -88,7 +155,9 @@ export default defineComponent({
         showControls$$q.value = true;
         showOverlay$$q.value = false;
 
-        video.currentTime = isLive.value ? Math.max(video.duration - 3, 0) : 0;
+        video.currentTime = isLive$$q.value
+          ? Math.max(video.duration - 3, 0)
+          : 0;
         video.play();
       };
     });
@@ -110,7 +179,11 @@ export default defineComponent({
 
 <template>
   <div v-show="ready$$q">
-    <video ref="elVideo$$q" class="w-full h-full" :controls="showControls$$q"></video>
+    <video
+      ref="elVideo$$q"
+      class="w-full h-full"
+      :controls="showControls$$q"
+    ></video>
     <template v-if="showOverlay$$q">
       <div
         class="absolute left-0 top-0 w-full h-full flex items-center justify-center bg-white bg-opacity-25"

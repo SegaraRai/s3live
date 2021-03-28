@@ -1,6 +1,9 @@
 import { VercelRequest } from '@vercel/node';
 import { Response } from 'node-fetch';
-import type { POSTPlaylistRequest } from '../../../lib/apiTypes';
+import type {
+  POSTPlaylistRequest,
+  PusherEventDataPlaylist,
+} from '../../../lib/apiTypes';
 import { authLiveId } from '../../../lib/auth';
 import {
   fragmentsPerPlaylist,
@@ -14,6 +17,7 @@ import { HTTPError } from '../../../lib/error';
 import { generateFragmentPathname } from '../../../lib/fragment';
 import { createHandler } from '../../../lib/handler';
 import { isLiveId } from '../../../lib/id';
+import { is } from '../../../lib/is';
 import { fetchLivePlaylist, updateLivePlaylist } from '../../../lib/live';
 import pusher from '../../../lib/pusher';
 import {
@@ -22,6 +26,24 @@ import {
 } from '../../../lib/response';
 import type { RedisPlaylist } from '../../../lib/types';
 import { validate } from '../../../lib/validate';
+
+function createPlaylist(liveId: string, playlist: RedisPlaylist): string {
+  let strPlaylist = `#EXTM3U
+#EXT-X-TARGETDURATION:${playlist.targetDuration}
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:${playlist.firstIndex + 1}
+`;
+  for (const [index, duration] of playlist.fragmentDurations.entries()) {
+    strPlaylist += `#EXTINF:${duration.toFixed(6)},
+${process.env.FRAGMENT_BASE_URI}/${generateFragmentPathname(
+      playlist.userId,
+      liveId,
+      playlist.firstIndex + index
+    )}
+`;
+  }
+  return strPlaylist;
+}
 
 export default createHandler(
   async (req: VercelRequest): Promise<Response> => {
@@ -34,20 +56,8 @@ export default createHandler(
       checkCSRF(req, true);
 
       const playlist = await fetchLivePlaylist(liveId);
-      let strPlaylist = `#EXTM3U
-#EXT-X-TARGETDURATION:${playlist.targetDuration}
-#EXT-X-VERSION:3
-#EXT-X-MEDIA-SEQUENCE:${playlist.firstIndex + 1}
-`;
-      for (const [index, duration] of playlist.fragmentDurations.entries()) {
-        strPlaylist += `#EXTINF:${duration.toFixed(6)},
-${process.env.FRAGMENT_BASE_URI}/${generateFragmentPathname(
-          playlist.userId,
-          liveId,
-          playlist.firstIndex + index
-        )}
-`;
-      }
+      const strPlaylist = createPlaylist(liveId, playlist);
+
       return new Response(req.method === 'HEAD' ? null : strPlaylist, {
         status: 200,
         headers: [
@@ -101,7 +111,13 @@ ${process.env.FRAGMENT_BASE_URI}/${generateFragmentPathname(
 
       await updateLivePlaylist(liveId, playlist);
 
-      await pusher.trigger(getPusherLiveKey(liveId), pusherPlaylistEvent, null);
+      const strPlaylist = createPlaylist(liveId, playlist);
+
+      await pusher.trigger(
+        getPusherLiveKey(liveId),
+        pusherPlaylistEvent,
+        is<PusherEventDataPlaylist>(strPlaylist)
+      );
 
       return createVoidAPIResponse();
     }

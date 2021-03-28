@@ -29,4 +29,4 @@ export const pusherFinishEvent = 'f';
 
 export const fragmentsPerPlaylist = 3;
 
-export const finishTimeout = 10;
+export const finishTimeout = 20;

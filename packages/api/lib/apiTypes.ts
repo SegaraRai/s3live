@@ -72,3 +72,4 @@ export type GETLivesURLsResponse = readonly GETLivesURLsResponseURL[];
 
 export type PusherEventDataComment = Comment;
 export type PusherEventDataViewerCount = ViewerCount;
+export type PusherEventDataPlaylist = string;
